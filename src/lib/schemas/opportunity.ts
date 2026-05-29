@@ -34,5 +34,13 @@ export const stageChangeSchema = z.object({
   stage: z.enum(STAGE_IDS),
 })
 
+export const addTeamMemberSchema = z.object({
+  userName: z.string().min(1, 'Name is required').max(200).trim(),
+  userEmail: z.string().email().max(200).optional().or(z.literal('')),
+  role: z.string().min(1, 'Role is required').max(100).trim(),
+})
+
+export type AddTeamMemberInput = z.infer<typeof addTeamMemberSchema>
+
 export type CreateOpportunityInput = z.input<typeof createOpportunitySchema>
 export type UpdateOpportunityInput = z.input<typeof updateOpportunitySchema>
