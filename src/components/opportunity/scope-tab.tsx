@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,11 +19,13 @@ const EMPTY: ScopeData = { modules: {}, requirements: [], assumptions: [], exclu
 export function ScopeTab({ opportunityId }: { opportunityId: string }) {
   const { data, isLoading, error } = useScope(opportunityId)
   const saveScope = useSaveScope(opportunityId)
-  const [draft, setDraft] = useState<ScopeData>(EMPTY)
-
-  useEffect(() => {
+  // Initialise / reset the editable draft when scope data loads (render-phase reset).
+  const [prevData, setPrevData] = useState(data)
+  const [draft, setDraft] = useState<ScopeData>(data ? { ...EMPTY, ...data } : EMPTY)
+  if (data !== prevData) {
+    setPrevData(data)
     if (data) setDraft({ ...EMPTY, ...data })
-  }, [data])
+  }
 
   async function handleSave() {
     try {

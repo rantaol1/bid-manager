@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -30,11 +30,16 @@ interface Props {
 }
 
 export function RoleConfigPanel({ roles, saving, onSave }: Props) {
-  const [rows, setRows] = useState<EditableRole[]>([])
+  const toRows = (source: RoleConfigDTO[]): EditableRole[] =>
+    source.map((r) => ({ id: r.id, roleName: r.roleName, rate: r.rate, sortOrder: r.sortOrder }))
 
-  useEffect(() => {
-    setRows(roles.map((r) => ({ id: r.id, roleName: r.roleName, rate: r.rate, sortOrder: r.sortOrder })))
-  }, [roles])
+  // Reset the editable rows when the server roles change (render-phase reset).
+  const [prevRoles, setPrevRoles] = useState(roles)
+  const [rows, setRows] = useState<EditableRole[]>(() => toRows(roles))
+  if (roles !== prevRoles) {
+    setPrevRoles(roles)
+    setRows(toRows(roles))
+  }
 
   function update(index: number, key: keyof EditableRole, value: string) {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, [key]: value } : r)))

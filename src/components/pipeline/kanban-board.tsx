@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { toast } from 'sonner'
 import { STAGES, type StageId } from '@/lib/constants/stages'
@@ -17,13 +17,15 @@ function groupByStage(opportunities: OpportunityDTO[]): Record<string, Opportuni
 }
 
 export function KanbanBoard({ opportunities }: { opportunities: OpportunityDTO[] }) {
-  const [columns, setColumns] = useState(() => groupByStage(opportunities))
   const changeStage = useChangeStage()
 
-  // Re-sync local board state whenever the upstream query data changes.
-  useEffect(() => {
+  // Re-sync local board state whenever the upstream query data changes (render-phase reset).
+  const [prevOpps, setPrevOpps] = useState(opportunities)
+  const [columns, setColumns] = useState(() => groupByStage(opportunities))
+  if (opportunities !== prevOpps) {
+    setPrevOpps(opportunities)
     setColumns(groupByStage(opportunities))
-  }, [opportunities])
+  }
 
   const stageList = useMemo(() => STAGES, [])
 

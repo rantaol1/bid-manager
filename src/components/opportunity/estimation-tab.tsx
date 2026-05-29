@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,24 +19,27 @@ export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunity
   const rolloutsQuery = useRollouts(opportunityId)
   const mutations = useEstimationMutations(opportunityId)
 
-  const [draft, setDraft] = useState<Record<string, string>>({})
-
-  // Sync the allocation draft from the server whenever rollouts data changes.
-  useEffect(() => {
-    if (!rolloutsQuery.data) return
+  // Build the allocation draft from server data; reset it when rollouts change (render-phase reset).
+  const buildDraft = (data: typeof rolloutsQuery.data): Record<string, string> => {
     const next: Record<string, string> = {}
-    for (const rollout of rolloutsQuery.data) {
+    for (const rollout of data ?? []) {
       for (const phase of rollout.phases) {
         for (const alloc of phase.allocations) {
           next[allocKey(phase.id, alloc.roleConfigId)] = String(Number(alloc.percentage))
         }
       }
     }
-    setDraft(next)
-  }, [rolloutsQuery.data])
+    return next
+  }
+  const [prevRollouts, setPrevRollouts] = useState(rolloutsQuery.data)
+  const [draft, setDraft] = useState<Record<string, string>>(() => buildDraft(rolloutsQuery.data))
+  if (rolloutsQuery.data !== prevRollouts) {
+    setPrevRollouts(rolloutsQuery.data)
+    setDraft(buildDraft(rolloutsQuery.data))
+  }
 
-  const roles = rolesQuery.data ?? []
-  const rollouts = rolloutsQuery.data ?? []
+  const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data])
+  const rollouts = useMemo(() => rolloutsQuery.data ?? [], [rolloutsQuery.data])
 
   const summary: EstimationSummary = useMemo(() => {
     const estRollouts: EstRollout[] = rollouts.map((ro) => ({
