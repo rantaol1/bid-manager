@@ -1,8 +1,137 @@
 'use client'
 
-import { EmptyState } from '@/components/common/empty-state'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorMessage } from '@/components/common/error-message'
+import { CostSummaryCards } from '@/components/estimation/cost-summary-cards'
+import { RoleConfigPanel } from '@/components/estimation/role-config-panel'
+import { PhaseBuilder } from '@/components/estimation/phase-builder'
+import { AllocationMatrix, allocKey } from '@/components/estimation/allocation-matrix'
+import { useRoles, useRollouts, useEstimationMutations } from '@/hooks/use-estimation'
+import { computeEstimation, type EstRollout } from '@/lib/estimation'
+import type { EstimationSummary } from '@/types'
 
-export function EstimationTab({ opportunityId }: { opportunityId: string }) {
-  void opportunityId
-  return <EmptyState message="Estimation" hint="Role config, phases and allocation matrix arrive in build step 8." />
+export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunityId: string; currency?: string }) {
+  const rolesQuery = useRoles(opportunityId)
+  const rolloutsQuery = useRollouts(opportunityId)
+  const mutations = useEstimationMutations(opportunityId)
+
+  const [draft, setDraft] = useState<Record<string, string>>({})
+
+  // Sync the allocation draft from the server whenever rollouts data changes.
+  useEffect(() => {
+    if (!rolloutsQuery.data) return
+    const next: Record<string, string> = {}
+    for (const rollout of rolloutsQuery.data) {
+      for (const phase of rollout.phases) {
+        for (const alloc of phase.allocations) {
+          next[allocKey(phase.id, alloc.roleConfigId)] = String(Number(alloc.percentage))
+        }
+      }
+    }
+    setDraft(next)
+  }, [rolloutsQuery.data])
+
+  const roles = rolesQuery.data ?? []
+  const rollouts = rolloutsQuery.data ?? []
+
+  const summary: EstimationSummary = useMemo(() => {
+    const estRollouts: EstRollout[] = rollouts.map((ro) => ({
+      id: ro.id,
+      name: ro.name,
+      colour: ro.colour,
+      sortOrder: ro.sortOrder,
+      phases: ro.phases.map((p) => ({
+        id: p.id,
+        name: p.name,
+        rolloutId: p.rolloutId,
+        startDate: p.startDate,
+        endDate: p.endDate,
+        workingDays: p.workingDays,
+        sortOrder: p.sortOrder,
+        goLives: p.goLives,
+        allocations: roles
+          .map((r) => ({ roleConfigId: r.id, percentage: Number(draft[allocKey(p.id, r.id)] ?? 0) }))
+          .filter((a) => a.percentage > 0),
+      })),
+    }))
+    return computeEstimation({
+      roleConfigs: roles.map((r) => ({
+        id: r.id,
+        roleName: r.roleName,
+        rate: Number(r.rate),
+        rateUnit: r.rateUnit,
+        hoursPerDay: r.hoursPerDay,
+        sortOrder: r.sortOrder,
+      })),
+      rollouts: estRollouts,
+      currency,
+    })
+  }, [roles, rollouts, draft, currency])
+
+  function onAllocChange(phaseId: string, roleId: string, value: string) {
+    setDraft((prev) => ({ ...prev, [allocKey(phaseId, roleId)]: value }))
+  }
+
+  async function onSaveAllocations() {
+    const allocations: { phaseId: string; roleConfigId: string; percentage: number }[] = []
+    for (const rollout of rollouts) {
+      for (const phase of rollout.phases) {
+        for (const role of roles) {
+          const raw = draft[allocKey(phase.id, role.id)]
+          allocations.push({ phaseId: phase.id, roleConfigId: role.id, percentage: Number(raw) || 0 })
+        }
+      }
+    }
+    try {
+      await mutations.saveAllocations.mutateAsync(allocations)
+      toast.success('Allocations saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save allocations')
+    }
+  }
+
+  if (rolesQuery.isLoading || rolloutsQuery.isLoading) {
+    return <Skeleton className="h-96 w-full" />
+  }
+  if (rolesQuery.error || rolloutsQuery.error) {
+    return <ErrorMessage message="Failed to load estimation data" />
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          render={<a href={`/api/opportunities/${opportunityId}/export/xlsx`} />}
+        >
+          <Download className="h-4 w-4" />
+          Export XLSX
+        </Button>
+      </div>
+
+      <CostSummaryCards summary={summary} />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RoleConfigPanel
+          roles={roles}
+          saving={mutations.saveRoles.isPending}
+          onSave={(r) => mutations.saveRoles.mutateAsync(r).then(() => undefined)}
+        />
+        <PhaseBuilder rollouts={rollouts} mutations={mutations} />
+      </div>
+
+      <AllocationMatrix
+        rollouts={rollouts}
+        roles={roles}
+        draft={draft}
+        onChange={onAllocChange}
+        onSave={onSaveAllocations}
+        saving={mutations.saveAllocations.isPending}
+      />
+    </div>
+  )
 }

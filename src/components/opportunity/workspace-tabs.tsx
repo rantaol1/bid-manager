@@ -37,7 +37,7 @@ export function WorkspaceTabs({ initialOpportunity }: { initialOpportunity: Oppo
         <ScopeTab opportunityId={opportunity.id} />
       </TabsContent>
       <TabsContent value="estimation">
-        <EstimationTab opportunityId={opportunity.id} />
+        <EstimationTab opportunityId={opportunity.id} currency={opportunity.currency} />
       </TabsContent>
       <TabsContent value="timeline">
         <TimelineTab opportunityId={opportunity.id} />
