@@ -1,0 +1,38 @@
+import { z } from 'zod'
+import { STAGE_IDS } from '@/lib/constants/stages'
+
+const optionalDate = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => (v ? new Date(v) : null))
+  .refine((v) => v === null || !isNaN(v.getTime()), 'Invalid date')
+
+export const createOpportunitySchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200).trim(),
+  customerId: z.string().min(1, 'Customer is required'),
+  stage: z.enum(STAGE_IDS).default('lead'),
+  expectedValue: z.coerce.number().min(0).max(1_000_000_000).optional().nullable(),
+  currency: z.string().length(3).default('EUR'),
+  probability: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  closeDate: optionalDate,
+  tags: z.array(z.string().max(40)).max(20).default([]),
+  notes: z.string().max(5000).optional().or(z.literal('')),
+})
+
+export const updateOpportunitySchema = z.object({
+  name: z.string().min(1).max(200).trim().optional(),
+  stage: z.enum(STAGE_IDS).optional(),
+  expectedValue: z.coerce.number().min(0).max(1_000_000_000).optional().nullable(),
+  currency: z.string().length(3).optional(),
+  probability: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  closeDate: optionalDate,
+  tags: z.array(z.string().max(40)).max(20).optional(),
+  notes: z.string().max(5000).optional().or(z.literal('')),
+})
+
+export const stageChangeSchema = z.object({
+  stage: z.enum(STAGE_IDS),
+})
+
+export type CreateOpportunityInput = z.input<typeof createOpportunitySchema>
+export type UpdateOpportunityInput = z.input<typeof updateOpportunitySchema>
