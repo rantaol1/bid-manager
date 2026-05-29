@@ -115,9 +115,7 @@ export function DeliverableList({
                 <div className="flex flex-wrap items-center gap-2">
                   {latest && (
                     <a
-                      href={latest.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/api/deliverables/versions/${latest.id}/download`}
                       className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-sm hover:bg-accent"
                     >
                       <Download className="h-4 w-4" />

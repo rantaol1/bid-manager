@@ -26,9 +26,7 @@ export function VersionHistory({ versions }: { versions: DeliverableVersionDTO[]
             </p>
           </div>
           <a
-            href={v.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/api/deliverables/versions/${v.id}/download`}
             className="flex shrink-0 items-center gap-1 text-magenta hover:underline"
           >
             <Download className="h-3.5 w-3.5" />
