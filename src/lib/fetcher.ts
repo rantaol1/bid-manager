@@ -1,9 +1,11 @@
 /** Thin fetch wrapper for client components used with TanStack Query. */
 export async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && options?.body instanceof FormData
   const res = await fetch(url, {
     ...options,
     headers: {
-      ...(options?.body ? { 'Content-Type': 'application/json' } : {}),
+      // Let the browser set the multipart boundary for FormData uploads.
+      ...(options?.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...options?.headers,
     },
   })
