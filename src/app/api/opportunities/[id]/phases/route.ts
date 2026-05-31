@@ -39,6 +39,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       data: {
         rolloutId: parsed.rolloutId,
         name: parsed.name,
+        colour: parsed.colour ?? null,
         startDate: start,
         endDate: end,
         workingDays: calculateWorkingDays(start, end),
@@ -63,6 +64,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const existing = await getOwnedPhase(parsed.id, id)
     if (!existing) return NextResponse.json({ error: 'Phase not found' }, { status: 404 })
 
+    // Reassigning the phase to a different lane/rollout — the target rollout must
+    // belong to the same opportunity.
+    if (parsed.rolloutId !== undefined && parsed.rolloutId !== existing.rolloutId) {
+      if (!(await assertRolloutOwned(parsed.rolloutId, id))) {
+        return NextResponse.json({ error: 'Rollout not found' }, { status: 404 })
+      }
+    }
+
     const start = parsed.startDate ? new Date(parsed.startDate) : existing.startDate
     const end = parsed.endDate ? new Date(parsed.endDate) : existing.endDate
     if (end < start) return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 })
@@ -72,7 +81,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const phase = await prisma.phase.update({
       where: { id: parsed.id },
       data: {
+        ...(parsed.rolloutId !== undefined ? { rolloutId: parsed.rolloutId } : {}),
         ...(parsed.name !== undefined ? { name: parsed.name } : {}),
+        ...(parsed.colour !== undefined ? { colour: parsed.colour } : {}),
         ...(parsed.startDate !== undefined ? { startDate: start } : {}),
         ...(parsed.endDate !== undefined ? { endDate: end } : {}),
         ...(datesChanged ? { workingDays: calculateWorkingDays(start, end) } : {}),

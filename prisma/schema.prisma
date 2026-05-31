@@ -106,6 +106,7 @@ model Phase {
   rolloutId   String
   rollout     Rollout      @relation(fields: [rolloutId], references: [id], onDelete: Cascade)
   name        String
+  colour      String?
   startDate   DateTime
   endDate     DateTime
   workingDays Int

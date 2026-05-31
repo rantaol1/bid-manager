@@ -27,7 +27,10 @@ export function TimelineTab({ opportunityId }: { opportunityId: string }) {
           <CardTitle>Project roadmap</CardTitle>
         </CardHeader>
         <CardContent>
-          <RoadmapBuilder rollouts={rollouts ?? []} />
+          <RoadmapBuilder
+            rollouts={rollouts ?? []}
+            onUpdatePhase={(input) => mutations.updatePhase.mutateAsync(input)}
+          />
         </CardContent>
       </Card>
 

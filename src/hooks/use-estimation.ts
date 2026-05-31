@@ -24,6 +24,7 @@ export interface PhaseDTO {
   id: string
   rolloutId: string
   name: string
+  colour: string | null
   startDate: string
   endDate: string
   workingDays: number
@@ -111,7 +112,9 @@ export function useEstimationMutations(id: string) {
   const updatePhase = useMutation({
     mutationFn: (input: {
       id: string
+      rolloutId?: string
       name?: string
+      colour?: string | null
       startDate?: string
       endDate?: string
       sortOrder?: number
