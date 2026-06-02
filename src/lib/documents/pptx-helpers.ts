@@ -64,28 +64,17 @@ export function addRoadmap(pptx: pptxgen, slide: pptxgen.Slide, estimation: Load
   const axisStart = startOfMonth(min)
   const totalMonths = Math.max(1, differenceInCalendarMonths(max, axisStart) + 1)
 
-  const chartX = 0.5
-  const chartW = 9.0
-  const inPerMonth = chartW / totalMonths
-  const topY = 1.5
-  const laneHeight = 0.55
-  const barH = 0.4
   const lanes = estimation.rollouts.length
-
-  // Month labels
-  for (let i = 0; i < totalMonths; i++) {
-    const m = addMonths(axisStart, i)
-    slide.addText(format(m, 'MMM yy'), {
-      x: chartX + i * inPerMonth,
-      y: 1.05,
-      w: inPerMonth,
-      h: 0.3,
-      fontFace: 'Arial',
-      fontSize: 8,
-      color: '666666',
-      align: 'center',
-    })
-  }
+  const chartX = 0.6
+  const chartW = 8.8
+  const inPerMonth = chartW / totalMonths
+  const monthLabelY = 1.55
+  const topY = 2.05
+  // Use the available vertical space: taller lanes when there are few rollouts.
+  const laneHeight = lanes <= 2 ? 0.95 : lanes <= 4 ? 0.75 : 0.6
+  const barH = Math.min(0.55, laneHeight * 0.58)
+  const gridTop = monthLabelY + 0.32
+  const gridBottom = topY + lanes * laneHeight - (laneHeight - barH) + 0.1
 
   function offsetIn(date: Date) {
     const monthsFromStart = differenceInCalendarMonths(date, axisStart)
@@ -93,10 +82,36 @@ export function addRoadmap(pptx: pptxgen, slide: pptxgen.Slide, estimation: Load
     return (monthsFromStart + dayFraction) * inPerMonth
   }
 
+  // Subtle vertical month gridlines (drawn first, behind bars).
+  for (let i = 0; i <= totalMonths; i++) {
+    slide.addShape(pptx.ShapeType.line, {
+      x: chartX + i * inPerMonth,
+      y: gridTop,
+      w: 0,
+      h: Math.max(0.1, gridBottom - gridTop),
+      line: { color: 'EAEAEA', width: 0.5 },
+    })
+  }
+
+  // Month axis labels
+  for (let i = 0; i < totalMonths; i++) {
+    const m = addMonths(axisStart, i)
+    slide.addText(format(m, 'MMM yy'), {
+      x: chartX + i * inPerMonth,
+      y: monthLabelY,
+      w: inPerMonth,
+      h: 0.3,
+      fontFace: 'Arial',
+      fontSize: totalMonths > 16 ? 7 : 8,
+      color: '666666',
+      align: 'center',
+    })
+  }
+
   for (const p of valid) {
     const left = chartX + offsetIn(p.start)
     const right = chartX + offsetIn(p.end)
-    const w = Math.max(0.4, right - left)
+    const w = Math.max(0.45, right - left)
     const y = topY + p.lane * laneHeight
     slide.addShape(pptx.ShapeType.chevron, {
       x: left,
@@ -104,39 +119,43 @@ export function addRoadmap(pptx: pptxgen, slide: pptxgen.Slide, estimation: Load
       w,
       h: barH,
       fill: { color: p.colour },
-      line: { color: p.colour, width: 0 },
+      line: { type: 'none' },
     })
+    // Inset text past the chevron notches and auto-shrink so labels never wrap/clip.
     slide.addText(p.name, {
-      x: left,
+      x: left + 0.16,
       y,
-      w,
+      w: Math.max(0.2, w - 0.34),
       h: barH,
       fontFace: 'Arial',
-      fontSize: 9,
+      fontSize: 10,
+      bold: true,
       color: 'FFFFFF',
       align: 'center',
       valign: 'middle',
+      wrap: false,
+      fit: 'shrink',
     })
     // Go-live diamonds at start of month
     for (const gl of p.goLives) {
       const glLeft = chartX + differenceInCalendarMonths(startOfMonth(gl), axisStart) * inPerMonth
       slide.addShape(pptx.ShapeType.diamond, {
-        x: glLeft - 0.08,
-        y: y + barH / 2 - 0.08,
-        w: 0.16,
-        h: 0.16,
+        x: glLeft - 0.09,
+        y: y + barH / 2 - 0.09,
+        w: 0.18,
+        h: 0.18,
         fill: { color: PPTX_BRAND.green },
-        line: { color: 'FFFFFF', width: 1 },
+        line: { color: 'FFFFFF', width: 1.25 },
       })
     }
   }
 
   // Legend
   let legendX = chartX
-  const legendY = topY + lanes * laneHeight + 0.3
+  const legendY = gridBottom + 0.45
   for (const ro of estimation.rollouts) {
-    slide.addShape(pptx.ShapeType.rect, { x: legendX, y: legendY, w: 0.18, h: 0.18, fill: { color: ro.colour } })
-    slide.addText(ro.name, { x: legendX + 0.25, y: legendY - 0.04, w: 2.2, h: 0.3, fontFace: 'Arial', fontSize: 10, color: PPTX_BRAND.black })
-    legendX += 2.6
+    slide.addShape(pptx.ShapeType.rect, { x: legendX, y: legendY, w: 0.2, h: 0.2, fill: { color: ro.colour }, line: { type: 'none' } })
+    slide.addText(ro.name, { x: legendX + 0.3, y: legendY - 0.05, w: 2.4, h: 0.3, fontFace: 'Arial', fontSize: 11, color: PPTX_BRAND.black, valign: 'middle' })
+    legendX += 2.9
   }
 }

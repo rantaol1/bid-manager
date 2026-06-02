@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { eachDayOfInterval, isWeekend } from 'date-fns'
+import { BUILTIN_STRUCTURED_CONTENT } from '../src/lib/documents/slides/static-content'
 
 const prisma = new PrismaClient()
 
@@ -33,6 +34,13 @@ async function main() {
       create: { roleName: r.roleName, rate: new Prisma.Decimal(r.rate), sortOrder: r.sortOrder },
     })
   }
+
+  console.error('[seed] Seeding proposal defaults...')
+  await prisma.proposalDefaults.upsert({
+    where: { id: 'singleton' },
+    update: BUILTIN_STRUCTURED_CONTENT as unknown as Prisma.ProposalDefaultsUpdateInput,
+    create: { id: 'singleton', ...(BUILTIN_STRUCTURED_CONTENT as unknown as object) } as Prisma.ProposalDefaultsCreateInput,
+  })
 
   console.error('[seed] Seeding sample customer...')
   await prisma.customer.upsert({

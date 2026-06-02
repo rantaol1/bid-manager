@@ -70,6 +70,105 @@ export interface EstimationSummary {
   currency: string
 }
 
+/* ---------- Proposal content (ProposalContent / ProposalDefaults models) ---------- */
+
+/** RACI cell value. */
+export type RaciValue = 'R' | 'A' | 'C' | 'I' | ''
+
+export interface RaciRow {
+  activity: string
+  execSponsor: RaciValue
+  processOwner: RaciValue
+  sme: RaciValue
+  arcwidePM: RaciValue
+  arcwideSA: RaciValue
+  arcwideConsultant: RaciValue
+}
+
+/** CRIM = Customisation / Report / Integration / Migration item. */
+export type CrimType = 'C' | 'R' | 'I' | 'M'
+
+export interface CrimItem {
+  id: string
+  type: CrimType
+  name: string
+  description?: string
+  complexity: 'low' | 'med' | 'high'
+}
+
+export interface MethodologyPhase {
+  phase: string
+  focus: string
+  deliverables: string
+}
+
+export interface TitledItem {
+  title: string
+  description: string
+}
+
+export interface GovernanceContent {
+  steering: string
+  pmo: string
+  workstreams: string[]
+}
+
+export interface ValueDriver {
+  driver: string
+  ifsCapability: string
+  targetOutcome: string
+}
+
+export interface ExecutiveSummaryContent {
+  opportunity: string
+  whatWePropose: string
+  howWeDeliver: string
+  investment: string
+  whyArcwide: string
+}
+
+export interface TeamProfile {
+  name: string
+  role: string
+}
+
+export interface ProposalReference {
+  name: string
+  scope: string
+  outcome: string
+}
+
+/** Structured content blocks that have global defaults + per-opportunity overrides. */
+export interface ProposalStructuredContent {
+  raci: RaciRow[]
+  crims: CrimItem[]
+  methodologyPhases: MethodologyPhase[]
+  waysOfWorking: TitledItem[]
+  governance: GovernanceContent
+  customerCommitments: TitledItem[]
+  dataMigrationSteps: string[]
+  integrationSteps: string[]
+  testingSteps: string[]
+  adoptionSteps: string[]
+  goLiveSteps: string[]
+  whyArcwide: TitledItem[]
+}
+
+/** Narrative (manual-entry) proposal fields. */
+export interface ProposalNarrative {
+  executiveSummary: ExecutiveSummaryContent | null
+  understanding: string | null
+  valueDrivers: ValueDriver[]
+  commercialModel: string | null
+  recommendation: string | null
+  teamProfiles: TeamProfile[]
+  references: ProposalReference[]
+  contactName: string | null
+  contactTitle: string | null
+  contactEmail: string | null
+  contactPhone: string | null
+}
+
 /* ---------- Timeline (stored as JSON on Opportunity.timelineConfig) ---------- */
 
 export interface TimelineConfig {

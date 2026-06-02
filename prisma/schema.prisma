@@ -41,6 +41,7 @@ model Opportunity {
   timelineConfig Json?
   deliverables   Deliverable[]
   activities     Activity[]
+  proposalContent ProposalContent?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   createdBy      String
@@ -181,4 +182,61 @@ model DefaultRoleConfig {
   rateUnit    String  @default("day")
   hoursPerDay Int     @default(8)
   sortOrder   Int     @default(0)
+}
+
+/// Per-opportunity proposal content. Narrative fields are entered by the user;
+/// structured blocks (raci, crims, methodology, etc.) are overrides — when null,
+/// the generator falls back to the global ProposalDefaults singleton.
+model ProposalContent {
+  id            String      @id @default(cuid())
+  opportunityId String      @unique
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  // Narrative (manual entry)
+  executiveSummary Json?
+  understanding    String?
+  valueDrivers     Json?
+  commercialModel  String?
+  recommendation   String?
+  teamProfiles     Json?
+  references       Json?
+  contactName      String?
+  contactTitle     String?
+  contactEmail     String?
+  contactPhone     String?
+
+  // Structured overrides (null => use global default)
+  raci                Json?
+  crims               Json?
+  methodologyPhases   Json?
+  waysOfWorking       Json?
+  governance          Json?
+  customerCommitments Json?
+  dataMigrationSteps  Json?
+  integrationSteps    Json?
+  testingSteps        Json?
+  adoptionSteps       Json?
+  goLiveSteps         Json?
+  whyArcwide          Json?
+
+  updatedAt DateTime @updatedAt
+}
+
+/// Global default proposal content (single row, id = "singleton"), seeded from
+/// static-content.ts. Editable by admins via the proposal builder.
+model ProposalDefaults {
+  id                  String   @id
+  raci                Json
+  crims               Json
+  methodologyPhases   Json
+  waysOfWorking       Json
+  governance          Json
+  customerCommitments Json
+  dataMigrationSteps  Json
+  integrationSteps    Json
+  testingSteps        Json
+  adoptionSteps       Json
+  goLiveSteps         Json
+  whyArcwide          Json
+  updatedAt           DateTime @updatedAt
 }

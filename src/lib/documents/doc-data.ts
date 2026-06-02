@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { loadEstimation, type LoadedEstimation } from '@/lib/estimation-data'
 import { computeEstimation } from '@/lib/estimation'
-import type { EstimationSummary, ScopeModules, ScopeRequirement } from '@/types'
+import type { EstimationSummary, ScopeModules, ScopeRequirement, ScopeRisk } from '@/types'
 import { IFS_MODULES } from '@/lib/constants/ifs-modules'
 
 export interface DocScope {
@@ -10,6 +10,7 @@ export interface DocScope {
   requirements: ScopeRequirement[]
   assumptions: string[]
   exclusions: string[]
+  risks: ScopeRisk[]
 }
 
 export interface DocData {
@@ -31,6 +32,7 @@ export async function loadDocData(opportunityId: string): Promise<DocData | null
   const scopeRow = await prisma.scope.findUnique({ where: { opportunityId } })
   const modules = (scopeRow?.modules as ScopeModules) ?? {}
   const requirements = (scopeRow?.requirements as unknown as ScopeRequirement[]) ?? []
+  const risks = (scopeRow?.risks as unknown as ScopeRisk[]) ?? []
   const selectedModuleNames = IFS_MODULES.filter((m) => modules[m.id]?.selected).map((m) => m.name)
 
   return {
@@ -42,6 +44,7 @@ export async function loadDocData(opportunityId: string): Promise<DocData | null
       requirements,
       assumptions: scopeRow?.assumptions ?? [],
       exclusions: scopeRow?.exclusions ?? [],
+      risks,
     },
   }
 }

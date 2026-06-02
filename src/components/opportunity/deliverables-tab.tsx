@@ -19,6 +19,7 @@ import { ErrorMessage } from '@/components/common/error-message'
 import { FileUploadZone } from '@/components/deliverables/file-upload-zone'
 import { DeliverableList } from '@/components/deliverables/deliverable-list'
 import { GenerateMenu } from '@/components/deliverables/generate-menu'
+import { ProposalBuilder } from '@/components/deliverables/proposal-builder'
 import { useDeliverables, useUploadDeliverable } from '@/hooks/use-deliverables'
 
 function AddDeliverableDialog({ opportunityId }: { opportunityId: string }) {
@@ -85,6 +86,7 @@ export function DeliverablesTab({ opportunityId }: { opportunityId: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <AddDeliverableDialog opportunityId={opportunityId} />
+        <ProposalBuilder opportunityId={opportunityId} />
         <GenerateMenu opportunityId={opportunityId} />
       </div>
 

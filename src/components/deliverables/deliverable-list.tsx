@@ -25,6 +25,16 @@ import {
   type DeliverableDTO,
 } from '@/hooks/use-deliverables'
 
+const TYPE_LABELS: Record<string, string> = {
+  upload: 'Upload',
+  estimate: 'Resource Estimate',
+  pricing: 'Pricing Summary',
+  timeline: 'Project Timeline',
+  summary: 'Executive Summary',
+  proposal: 'Full Proposal',
+  board_summary: 'Board Summary',
+}
+
 function NewVersionDialog({ opportunityId, deliverable }: { opportunityId: string; deliverable: DeliverableDTO }) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -105,7 +115,7 @@ export function DeliverableList({
                     <p className="font-medium">{d.name}</p>
                     <p className="text-xs text-muted-foreground">
                       <Badge variant="secondary" className="mr-2">
-                        {d.type}
+                        {TYPE_LABELS[d.type] ?? d.type}
                       </Badge>
                       v{d.currentVersion} · updated {format(new Date(d.updatedAt), 'd MMM yyyy')}
                     </p>
