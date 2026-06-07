@@ -11,13 +11,23 @@ import { RoleConfigPanel } from '@/components/estimation/role-config-panel'
 import { PhaseBuilder } from '@/components/estimation/phase-builder'
 import { AllocationMatrix, allocKey } from '@/components/estimation/allocation-matrix'
 import { useRoles, useRollouts, useEstimationMutations } from '@/hooks/use-estimation'
+import { useProposalData } from '@/hooks/use-proposal-data'
+import { SectionPreview } from '@/components/preview/section-preview'
+import { PreviewPanel } from '@/components/preview/preview-panel'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { computeEstimation, type EstRollout } from '@/lib/estimation'
 import type { EstimationSummary } from '@/types'
+
+const ESTIMATION_SLIDES: Array<{ id: string; label: string }> = [
+  { id: 'team', label: 'Proposed delivery team' },
+  { id: 'commercials', label: 'Indicative investment' },
+]
 
 export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunityId: string; currency?: string }) {
   const rolesQuery = useRoles(opportunityId)
   const rolloutsQuery = useRollouts(opportunityId)
   const mutations = useEstimationMutations(opportunityId)
+  const { data: proposalData } = useProposalData(opportunityId)
 
   // Build the allocation draft from server data; reset it when rollouts change (render-phase reset).
   const buildDraft = (data: typeof rolloutsQuery.data): Record<string, string> => {
@@ -135,6 +145,21 @@ export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunity
         onSave={onSaveAllocations}
         saving={mutations.saveAllocations.isPending}
       />
+
+      {proposalData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Slide previews</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {ESTIMATION_SLIDES.map((s) => (
+              <PreviewPanel key={s.id} label={s.label}>
+                <SectionPreview sectionId={s.id} data={{ ...proposalData, summary }} />
+              </PreviewPanel>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ export interface CoverOptions {
   subtitle: string
   dateStr: string
   version: number
+  companyName?: string
 }
 
 /** Dark cover slide: title, customer, subtitle, ARCWIDE wordmark, magenta squares. */
@@ -57,10 +58,10 @@ export function addCoverSlide(pptx: pptxgen, opts: CoverOptions) {
     color: BRAND.midGray,
   })
 
-  slide.addText('ARCWIDE', {
-    x: SLIDE.w - SLIDE.margin - 2.5,
+  slide.addText((opts.companyName || 'ARCWIDE').toUpperCase(), {
+    x: SLIDE.w - SLIDE.margin - 3.5,
     y: SLIDE.h - 0.55,
-    w: 2.5,
+    w: 3.5,
     h: 0.35,
     fontFace: BRAND.font,
     fontSize: 16,

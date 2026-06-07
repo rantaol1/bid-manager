@@ -115,7 +115,7 @@ export function DeliverableList({
                     <p className="font-medium">{d.name}</p>
                     <p className="text-xs text-muted-foreground">
                       <Badge variant="secondary" className="mr-2">
-                        {TYPE_LABELS[d.type] ?? d.type}
+                        {TYPE_LABELS[d.type] ?? (d.type.startsWith('template:') ? 'Template document' : d.type)}
                       </Badge>
                       v{d.currentVersion} · updated {format(new Date(d.updatedAt), 'd MMM yyyy')}
                     </p>

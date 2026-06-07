@@ -13,12 +13,26 @@ import { FitGapSummary } from '@/components/scope/fit-gap-summary'
 import { RequirementsTable } from '@/components/scope/requirements-table'
 import { RiskRegister } from '@/components/scope/risk-register'
 import { useScope, useSaveScope, type ScopeData } from '@/hooks/use-scope'
+import { useProposalData } from '@/hooks/use-proposal-data'
+import { SectionPreview } from '@/components/preview/section-preview'
+import { PreviewPanel } from '@/components/preview/preview-panel'
+import { IFS_MODULES } from '@/lib/constants/ifs-modules'
+
+const SCOPE_SLIDES: Array<{ id: string; label: string }> = [
+  { id: 'solution_overview', label: 'Solution overview' },
+  { id: 'scope_in', label: 'In scope — by module' },
+  { id: 'scope_out', label: 'Out of scope & deferred' },
+  { id: 'assumptions', label: 'Assumptions & dependencies' },
+  { id: 'fit_assessment', label: 'High-level fit assessment' },
+  { id: 'risk', label: 'Risk management' },
+]
 
 const EMPTY: ScopeData = { modules: {}, requirements: [], assumptions: [], exclusions: [], risks: [] }
 
 export function ScopeTab({ opportunityId }: { opportunityId: string }) {
   const { data, isLoading, error } = useScope(opportunityId)
   const saveScope = useSaveScope(opportunityId)
+  const { data: proposalData } = useProposalData(opportunityId)
   // Initialise / reset the editable draft when scope data loads (render-phase reset).
   const [prevData, setPrevData] = useState(data)
   const [draft, setDraft] = useState<ScopeData>(data ? { ...EMPTY, ...data } : EMPTY)
@@ -38,6 +52,21 @@ export function ScopeTab({ opportunityId }: { opportunityId: string }) {
 
   if (isLoading) return <Skeleton className="h-96 w-full" />
   if (error) return <ErrorMessage message="Failed to load scope" />
+
+  // Overlay the live scope draft onto the resolved proposal data for previews.
+  const previewData = proposalData
+    ? {
+        ...proposalData,
+        scope: {
+          modules: draft.modules,
+          selectedModuleNames: IFS_MODULES.filter((m) => draft.modules[m.id]?.selected).map((m) => m.name),
+          requirements: draft.requirements,
+          assumptions: draft.assumptions,
+          exclusions: draft.exclusions,
+          risks: draft.risks,
+        },
+      }
+    : null
 
   return (
     <div className="space-y-6">
@@ -100,6 +129,21 @@ export function ScopeTab({ opportunityId }: { opportunityId: string }) {
           <RiskRegister risks={draft.risks} onChange={(risks) => setDraft((d) => ({ ...d, risks }))} />
         </CardContent>
       </Card>
+
+      {previewData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Slide previews</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {SCOPE_SLIDES.map((s) => (
+              <PreviewPanel key={s.id} label={s.label}>
+                <SectionPreview sectionId={s.id} data={previewData} />
+              </PreviewPanel>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

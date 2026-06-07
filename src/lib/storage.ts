@@ -21,6 +21,20 @@ export async function getFile(url: string) {
   return { stream: result.stream, contentType: result.blob.contentType, size: result.blob.size }
 }
 
+/** Fetch a private blob fully into a Buffer (for server-side processing, e.g. templating). */
+export async function getFileBuffer(url: string): Promise<Buffer | null> {
+  const result = await getFile(url)
+  if (!result) return null
+  const reader = (result.stream as ReadableStream<Uint8Array>).getReader()
+  const chunks: Uint8Array[] = []
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (value) chunks.push(value)
+  }
+  return Buffer.concat(chunks.map((c) => Buffer.from(c)))
+}
+
 export async function listFiles(folder: string) {
   const result = await list({ prefix: folder })
   return result.blobs

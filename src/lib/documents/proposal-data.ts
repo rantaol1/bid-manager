@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { loadDocData, type DocData } from '@/lib/documents/doc-data'
 import { BUILTIN_STRUCTURED_CONTENT } from '@/lib/documents/slides/static-content'
+import { normalizeRaci } from '@/lib/raci'
 import type {
   ProposalStructuredContent,
   ProposalNarrative,
@@ -17,10 +18,17 @@ export interface ProposalMeta {
   customerCountry: string | null
 }
 
+export interface ProposalBranding {
+  companyName: string
+  footerText: string
+  defaultCurrency: string
+}
+
 export interface ProposalData extends DocData {
   meta: ProposalMeta
   content: ProposalStructuredContent
   narrative: ProposalNarrative
+  branding: ProposalBranding
 }
 
 /** Pick the first non-null/non-undefined value: override ?? default ?? builtin. */
@@ -47,7 +55,7 @@ export async function resolveStructuredContent(
   const o = override ?? {}
   const d = defaultsRow
   return {
-    raci: resolve('raci', o.raci, d),
+    raci: normalizeRaci(resolve('raci', o.raci, d)),
     crims: resolve('crims', o.crims, d),
     methodologyPhases: resolve('methodologyPhases', o.methodologyPhases, d),
     waysOfWorking: resolve('waysOfWorking', o.waysOfWorking, d),
@@ -85,13 +93,14 @@ export async function loadProposalData(opportunityId: string): Promise<ProposalD
   const docData = await loadDocData(opportunityId)
   if (!docData) return null
 
-  const [opp, contentRow, defaultsRow] = await Promise.all([
+  const [opp, contentRow, defaultsRow, brandingRow] = await Promise.all([
     prisma.opportunity.findUnique({
       where: { id: opportunityId },
       select: { name: true, customer: { select: { name: true, industry: true, country: true } } },
     }),
     prisma.proposalContent.findUnique({ where: { opportunityId } }),
     prisma.proposalDefaults.findUnique({ where: { id: 'singleton' } }),
+    prisma.brandingSettings.findUnique({ where: { id: 'singleton' } }),
   ])
 
   if (!opp) return null
@@ -111,5 +120,10 @@ export async function loadProposalData(opportunityId: string): Promise<ProposalD
     },
     content,
     narrative: toNarrative(contentRow as unknown as Record<string, unknown> | null),
+    branding: {
+      companyName: brandingRow?.companyName ?? 'Arcwide',
+      footerText: brandingRow?.footerText ?? 'ARCWIDE · IFS CLOUD IMPLEMENTATION PROPOSAL',
+      defaultCurrency: brandingRow?.defaultCurrency ?? 'EUR',
+    },
   }
 }

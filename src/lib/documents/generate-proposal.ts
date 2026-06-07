@@ -5,6 +5,7 @@ import { getSections, type DeliverableType } from '@/lib/documents/proposal-sect
 import { addCoverSlide } from '@/lib/documents/slides/shared/cover-slide'
 import { addDividerSlide } from '@/lib/documents/slides/shared/divider-slide'
 import { addContentsSlide } from '@/lib/documents/slides/shared/contents-slide'
+import { setProposalFooter } from '@/lib/documents/slides/shared/branding'
 
 interface GenerateArgs {
   type: DeliverableType
@@ -29,6 +30,8 @@ export async function generateProposalPptx({ type, selectedSections, data, versi
 
   const dateStr = format(new Date(), 'd MMMM yyyy')
   const isBoard = type === 'board_summary'
+  const companyName = data.branding.companyName
+  setProposalFooter(data.branding.footerText)
 
   let slideNumber = 0
   for (const section of sections) {
@@ -40,6 +43,7 @@ export async function generateProposalPptx({ type, selectedSections, data, versi
           subtitle: isBoard ? 'Board Decision Summary' : 'IFS Cloud Implementation Proposal',
           dateStr,
           version,
+          companyName,
         })
         break
       case 'contents':
@@ -50,6 +54,7 @@ export async function generateProposalPptx({ type, selectedSections, data, versi
         addDividerSlide(pptx, {
           number: section.dividerNumber ?? '',
           title: section.dividerSubtitle ?? section.title,
+          companyName,
         })
         break
       case 'content':

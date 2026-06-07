@@ -20,6 +20,13 @@ export const BRAND = {
 export const SLIDE = { w: 10, h: 5.625, margin: 0.5, contentW: 9.0 }
 const FOOTER_Y = 5.32
 
+const DEFAULT_FOOTER = 'ARCWIDE  ·  IFS CLOUD IMPLEMENTATION PROPOSAL'
+let footerOverride: string | null = null
+/** Set the per-document footer text (call once before building a deck). */
+export function setProposalFooter(text: string | null | undefined) {
+  footerOverride = text?.trim() ? text.trim() : null
+}
+
 type Cell = { text: string; options?: pptxgen.TextPropsOptions }
 
 /** Decorative magenta squares in the top-right corner. */
@@ -50,7 +57,7 @@ export function addMagentaSquares(slide: pptxgen.Slide) {
 
 /** Footer band: wordmark left, slide number right. Content slides only. */
 export function addFooter(slide: pptxgen.Slide, slideNumber: number) {
-  slide.addText('ARCWIDE  ·  IFS CLOUD IMPLEMENTATION PROPOSAL', {
+  slide.addText(footerOverride ?? DEFAULT_FOOTER, {
     x: SLIDE.margin,
     y: FOOTER_Y,
     w: 7,

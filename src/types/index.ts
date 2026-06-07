@@ -75,14 +75,22 @@ export interface EstimationSummary {
 /** RACI cell value. */
 export type RaciValue = 'R' | 'A' | 'C' | 'I' | ''
 
+/** A RACI column (role). `id` keys each row's cells; `label` is the display name. */
+export interface RaciColumn {
+  id: string
+  label: string
+}
+
 export interface RaciRow {
   activity: string
-  execSponsor: RaciValue
-  processOwner: RaciValue
-  sme: RaciValue
-  arcwidePM: RaciValue
-  arcwideSA: RaciValue
-  arcwideConsultant: RaciValue
+  /** value per column id */
+  cells: Record<string, RaciValue>
+}
+
+/** RACI matrix with user-editable columns and rows. */
+export interface RaciMatrix {
+  columns: RaciColumn[]
+  rows: RaciRow[]
 }
 
 /** CRIM = Customisation / Report / Integration / Migration item. */
@@ -140,7 +148,7 @@ export interface ProposalReference {
 
 /** Structured content blocks that have global defaults + per-opportunity overrides. */
 export interface ProposalStructuredContent {
-  raci: RaciRow[]
+  raci: RaciMatrix
   crims: CrimItem[]
   methodologyPhases: MethodologyPhase[]
   waysOfWorking: TitledItem[]

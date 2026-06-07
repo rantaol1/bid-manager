@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorMessage } from '@/components/common/error-message'
 import { GoLiveManager } from '@/components/timeline/go-live-manager'
 import { useRollouts, useEstimationMutations } from '@/hooks/use-estimation'
+import { useProposalData } from '@/hooks/use-proposal-data'
+import { SectionPreview } from '@/components/preview/section-preview'
+import { PreviewPanel } from '@/components/preview/preview-panel'
 
 // Roadmap relies on browser-only APIs (html-to-image) — load client-side only.
 const RoadmapBuilder = dynamic(
@@ -16,6 +19,7 @@ const RoadmapBuilder = dynamic(
 export function TimelineTab({ opportunityId }: { opportunityId: string }) {
   const { data: rollouts, isLoading, error } = useRollouts(opportunityId)
   const mutations = useEstimationMutations(opportunityId)
+  const { data: proposalData } = useProposalData(opportunityId)
 
   if (isLoading) return <Skeleton className="h-96 w-full" />
   if (error) return <ErrorMessage message="Failed to load timeline data" />
@@ -35,6 +39,19 @@ export function TimelineTab({ opportunityId }: { opportunityId: string }) {
       </Card>
 
       <GoLiveManager rollouts={rollouts ?? []} mutations={mutations} />
+
+      {proposalData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Slide preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PreviewPanel label="Plan slide">
+              <SectionPreview sectionId="plan" data={proposalData} />
+            </PreviewPanel>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

@@ -91,16 +91,18 @@ export function teamSlide(pptx: pptxgen, data: ProposalData, n: number) {
 
 export function raciSlide(pptx: pptxgen, data: ProposalData, n: number) {
   const slide = contentSlide(pptx, { label: 'RACI', title: 'RACI matrix', slideNumber: n })
-  const rows = data.content.raci
-  if (rows.length === 0) {
-    addPlaceholder(slide, 'Add RACI rows in the proposal builder to populate this slide.')
+  const { columns, rows } = data.content.raci
+  if (rows.length === 0 || columns.length === 0) {
+    addPlaceholder(slide, 'Add RACI activities and roles in the Proposal tab to populate this slide.')
     return
   }
+  const activityW = 2.6
+  const colW = Math.max(0.6, (9.0 - activityW) / columns.length)
   brandedTable(
     slide,
-    ['Activity', 'Exec\nSponsor', 'Process\nOwner', 'SME', 'Arcwide\nPM', 'Arcwide\nSA', 'Arcwide\nCons.'],
-    rows.map((r) => [r.activity, r.execSponsor, r.processOwner, r.sme, r.arcwidePM, r.arcwideSA, r.arcwideConsultant]),
-    { y: 1.4, colW: [2.4, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1], fontSize: 9 }
+    ['Activity', ...columns.map((c) => c.label)],
+    rows.map((r) => [r.activity, ...columns.map((c) => r.cells[c.id] ?? '')]),
+    { y: 1.4, colW: [activityW, ...columns.map(() => colW)], fontSize: columns.length > 6 ? 8 : 9 }
   )
 }
 

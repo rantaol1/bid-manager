@@ -5,6 +5,7 @@ export interface DividerOptions {
   number: string
   title: string
   subtitle?: string
+  companyName?: string
 }
 
 /** Dark chapter divider: large magenta number, white title, ARCWIDE wordmark. */
@@ -45,10 +46,10 @@ export function addDividerSlide(pptx: pptxgen, opts: DividerOptions) {
       color: 'CCCCCC',
     })
   }
-  slide.addText('ARCWIDE', {
-    x: SLIDE.w - SLIDE.margin - 2.5,
+  slide.addText((opts.companyName || 'ARCWIDE').toUpperCase(), {
+    x: SLIDE.w - SLIDE.margin - 3.5,
     y: SLIDE.h - 0.55,
-    w: 2.5,
+    w: 3.5,
     h: 0.35,
     fontFace: BRAND.font,
     fontSize: 14,

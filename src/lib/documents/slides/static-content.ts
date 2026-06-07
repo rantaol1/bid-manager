@@ -3,9 +3,9 @@ import type {
   GovernanceContent,
   MethodologyPhase,
   ProposalStructuredContent,
-  RaciRow,
   TitledItem,
 } from '@/types'
+import { DEFAULT_RACI } from '@/lib/raci'
 
 /**
  * Built-in default proposal content. These constants seed the global
@@ -35,17 +35,6 @@ export const DEFAULT_RISKS: Array<{ risk: string; impact: string; mitigation: st
   { risk: 'Integration / vendor dependencies', impact: 'Med', mitigation: 'Early cataloguing, vendor engagement, SIT buffers' },
   { risk: 'Adoption / change resistance', impact: 'Med', mitigation: 'Change workstream, champions, comms plan' },
   { risk: 'Aggressive timeline', impact: 'Med', mitigation: 'Phased rollout, contingency, realistic milestones' },
-]
-
-export const RACI_MATRIX: RaciRow[] = [
-  { activity: 'Scope & charter', execSponsor: 'A', processOwner: 'C', sme: 'I', arcwidePM: 'R', arcwideSA: 'C', arcwideConsultant: 'I' },
-  { activity: 'Solution design decisions', execSponsor: 'I', processOwner: 'A', sme: 'C', arcwidePM: 'C', arcwideSA: 'R', arcwideConsultant: 'C' },
-  { activity: 'Configuration & build', execSponsor: 'I', processOwner: 'I', sme: 'C', arcwidePM: 'C', arcwideSA: 'C', arcwideConsultant: 'R' },
-  { activity: 'CRIM specification & build', execSponsor: 'I', processOwner: 'C', sme: 'C', arcwidePM: 'A', arcwideSA: 'C', arcwideConsultant: 'R' },
-  { activity: 'Data migration & validation', execSponsor: 'I', processOwner: 'A', sme: 'R', arcwidePM: 'C', arcwideSA: 'C', arcwideConsultant: 'R' },
-  { activity: 'Testing (SIT / UAT)', execSponsor: 'I', processOwner: 'A', sme: 'R', arcwidePM: 'C', arcwideSA: 'C', arcwideConsultant: 'R' },
-  { activity: 'Training & adoption', execSponsor: 'I', processOwner: 'A', sme: 'R', arcwidePM: 'C', arcwideSA: 'I', arcwideConsultant: 'R' },
-  { activity: 'Go-live decision', execSponsor: 'A', processOwner: 'C', sme: 'I', arcwidePM: 'R', arcwideSA: 'C', arcwideConsultant: 'I' },
 ]
 
 export const DEFAULT_CRIMS: CrimItem[] = [
@@ -113,7 +102,7 @@ export const WHY_ARCWIDE: TitledItem[] = [
 
 /** The complete set of built-in structured content defaults. */
 export const BUILTIN_STRUCTURED_CONTENT: ProposalStructuredContent = {
-  raci: RACI_MATRIX,
+  raci: DEFAULT_RACI,
   crims: DEFAULT_CRIMS,
   methodologyPhases: METHODOLOGY_PHASES,
   waysOfWorking: WAYS_OF_WORKING,

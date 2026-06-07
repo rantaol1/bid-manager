@@ -4,14 +4,16 @@ import { z } from 'zod'
 
 const raciValue = z.enum(['R', 'A', 'C', 'I', ''])
 
-const raciRow = z.object({
-  activity: z.string().min(1).max(200).trim(),
-  execSponsor: raciValue,
-  processOwner: raciValue,
-  sme: raciValue,
-  arcwidePM: raciValue,
-  arcwideSA: raciValue,
-  arcwideConsultant: raciValue,
+const raciMatrix = z.object({
+  columns: z.array(z.object({ id: z.string().min(1).max(60), label: z.string().min(1).max(60).trim() })).max(12),
+  rows: z
+    .array(
+      z.object({
+        activity: z.string().min(1).max(200).trim(),
+        cells: z.record(z.string(), raciValue),
+      })
+    )
+    .max(60),
 })
 
 const crimItem = z.object({
@@ -43,7 +45,7 @@ const stepList = z.array(z.string().max(300)).max(12)
 
 /** The structured blocks shared by ProposalContent overrides and ProposalDefaults. */
 const structuredBlocks = {
-  raci: z.array(raciRow).max(40),
+  raci: raciMatrix,
   crims: z.array(crimItem).max(100),
   methodologyPhases: z.array(methodologyPhase).max(12),
   waysOfWorking: z.array(titledItem).max(12),

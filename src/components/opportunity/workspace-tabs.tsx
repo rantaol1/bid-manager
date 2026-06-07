@@ -5,6 +5,7 @@ import { OverviewTab } from '@/components/opportunity/overview-tab'
 import { ScopeTab } from '@/components/opportunity/scope-tab'
 import { EstimationTab } from '@/components/opportunity/estimation-tab'
 import { TimelineTab } from '@/components/opportunity/timeline-tab'
+import { ProposalContentTab } from '@/components/opportunity/proposal-content-tab'
 import { DeliverablesTab } from '@/components/opportunity/deliverables-tab'
 import { useOpportunity, type OpportunityDetailDTO } from '@/hooks/use-opportunity'
 
@@ -13,6 +14,7 @@ const TAB_DEFS = [
   { value: 'scope', label: 'Scope' },
   { value: 'estimation', label: 'Estimation' },
   { value: 'timeline', label: 'Timeline' },
+  { value: 'proposal', label: 'Proposal' },
   { value: 'deliverables', label: 'Deliverables' },
 ]
 
@@ -41,6 +43,9 @@ export function WorkspaceTabs({ initialOpportunity }: { initialOpportunity: Oppo
       </TabsContent>
       <TabsContent value="timeline">
         <TimelineTab opportunityId={opportunity.id} />
+      </TabsContent>
+      <TabsContent value="proposal">
+        <ProposalContentTab opportunityId={opportunity.id} />
       </TabsContent>
       <TabsContent value="deliverables">
         <DeliverablesTab opportunityId={opportunity.id} />

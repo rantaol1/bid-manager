@@ -222,6 +222,39 @@ model ProposalContent {
   updatedAt DateTime @updatedAt
 }
 
+/// Uploaded document templates. `docx_template` files contain {placeholders} filled
+/// via docxtemplater; `text_source` files are parsed for reusable standard-text snippets.
+model Template {
+  id            String   @id @default(cuid())
+  name          String
+  kind          String // 'docx_template' | 'text_source'
+  docType       String // 'docx' | 'pptx'
+  category      String? // deliverable type or section id this template targets
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  extractedText String? // full text (text_source) for the snippet browser
+  snippets      Json? // [{ heading, text }] parsed from the upload
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     String
+
+  @@index([kind])
+}
+
+/// Workspace-wide branding & general settings (single row, id = "singleton").
+model BrandingSettings {
+  id                 String   @id
+  companyName        String   @default("Arcwide")
+  logoUrl            String?
+  defaultCurrency    String   @default("EUR")
+  validityDays       Int      @default(90)
+  footerText         String   @default("ARCWIDE · IFS CLOUD IMPLEMENTATION PROPOSAL")
+  templateSelections Json? // { estimate?: templateId, pricing?: templateId, proposal?: templateId }
+  updatedAt          DateTime @updatedAt
+}
+
 /// Global default proposal content (single row, id = "singleton"), seeded from
 /// static-content.ts. Editable by admins via the proposal builder.
 model ProposalDefaults {
