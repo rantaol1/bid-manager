@@ -1,4 +1,46 @@
-import type { RaciColumn, RaciMatrix, RaciValue } from '@/types'
+import type { RaciColumn, RaciLetter, RaciMatrix, RaciRow, RaciValue } from '@/types'
+
+/** The four RACI letters, in canonical display order. */
+export const RACI_LETTERS: RaciLetter[] = ['R', 'A', 'C', 'I']
+
+export const RACI_LETTER_LABEL: Record<RaciLetter, string> = {
+  R: 'Responsible',
+  A: 'Accountable',
+  C: 'Consulted',
+  I: 'Informed',
+}
+
+const LETTER_RANK: Record<RaciLetter, number> = { R: 0, A: 1, C: 2, I: 3 }
+
+/** Coerce any stored cell value (array, single letter, "A/R", "AR", null) to a
+ * de-duplicated letter array sorted in canonical RACI order. */
+export function parseRaciCell(value: unknown): RaciValue {
+  const raw: string[] = Array.isArray(value)
+    ? value.map((v) => String(v))
+    : typeof value === 'string'
+      ? value.split(/[^A-Za-z]+/)
+      : []
+  const seen = new Set<RaciLetter>()
+  for (const token of raw) {
+    for (const ch of token.toUpperCase()) {
+      if (ch === 'R' || ch === 'A' || ch === 'C' || ch === 'I') seen.add(ch)
+    }
+  }
+  return RACI_LETTERS.filter((l) => seen.has(l))
+}
+
+/** Render a cell's letters for display, e.g. `['A','R']` → `"R/A"`. */
+export function formatRaciCell(value: unknown): string {
+  return parseRaciCell(value).slice().sort((a, b) => LETTER_RANK[a] - LETTER_RANK[b]).join('/')
+}
+
+/** Toggle a single letter in a cell, returning a new canonical-ordered array. */
+export function toggleRaciLetter(value: RaciValue, letter: RaciLetter): RaciValue {
+  const set = new Set(parseRaciCell(value))
+  if (set.has(letter)) set.delete(letter)
+  else set.add(letter)
+  return RACI_LETTERS.filter((l) => set.has(l))
+}
 
 export const DEFAULT_RACI_COLUMNS: RaciColumn[] = [
   { id: 'execSponsor', label: 'Exec Sponsor' },
@@ -9,9 +51,9 @@ export const DEFAULT_RACI_COLUMNS: RaciColumn[] = [
   { id: 'arcwideConsultant', label: 'Arcwide Consultant' },
 ]
 
-function row(activity: string, values: RaciValue[]): { activity: string; cells: Record<string, RaciValue> } {
+function row(activity: string, values: Array<RaciLetter | '' | RaciLetter[]>): RaciRow {
   const cells: Record<string, RaciValue> = {}
-  DEFAULT_RACI_COLUMNS.forEach((c, i) => (cells[c.id] = values[i] ?? ''))
+  DEFAULT_RACI_COLUMNS.forEach((c, i) => (cells[c.id] = parseRaciCell(values[i])))
   return { activity, cells }
 }
 
@@ -46,7 +88,10 @@ export function normalizeRaci(value: unknown): RaciMatrix {
     const m = value as RaciMatrix
     return {
       columns: m.columns ?? DEFAULT_RACI_COLUMNS,
-      rows: (m.rows ?? []).map((r) => ({ activity: r.activity ?? '', cells: r.cells ?? {} })),
+      rows: (m.rows ?? []).map((r) => ({
+        activity: r.activity ?? '',
+        cells: Object.fromEntries(Object.entries(r.cells ?? {}).map(([k, v]) => [k, parseRaciCell(v)])),
+      })),
     }
   }
 
@@ -56,9 +101,7 @@ export function normalizeRaci(value: unknown): RaciMatrix {
       columns: DEFAULT_RACI_COLUMNS,
       rows: (value as LegacyRaciRow[]).map((r) => ({
         activity: typeof r.activity === 'string' ? r.activity : '',
-        cells: Object.fromEntries(
-          DEFAULT_RACI_COLUMNS.map((c) => [c.id, (r[c.id] as RaciValue) ?? ''])
-        ),
+        cells: Object.fromEntries(DEFAULT_RACI_COLUMNS.map((c) => [c.id, parseRaciCell(r[c.id])])),
       })),
     }
   }

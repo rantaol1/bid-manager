@@ -1,6 +1,7 @@
 import PptxGenJS from 'pptxgenjs'
 import { format } from 'date-fns'
 import { titleSlide, contentSlide, addRoadmap, PPTX_BRAND } from '@/lib/documents/pptx-helpers'
+import { addSolutionTowerSlide } from '@/lib/documents/slides/shared/solution-tower'
 import { formatCurrency } from '@/lib/utils'
 import type { DocData } from '@/lib/documents/doc-data'
 
@@ -37,6 +38,11 @@ export async function generateSummaryPptx(data: DocData): Promise<Buffer> {
       ? scope.selectedModuleNames.map((m) => ({ text: m, options: { bullet: true, fontFace: 'Arial', fontSize: 14 } }))
       : [{ text: 'Modules to be confirmed during scoping.', options: { fontFace: 'Arial', fontSize: 14 } }]
   approach.addText(modulesBullets, { x: 0.5, y: 1.2, w: 9, h: 3.5, color: PPTX_BRAND.black })
+
+  // 3b. Solution set overview (phased tower) — full-bleed, no title/footer chrome.
+  if (scope.selectedModuleNames.length > 0) {
+    addSolutionTowerSlide(pptx, scope)
+  }
 
   // 4. Project team
   const team = contentSlide(pptx, 'Project team')

@@ -16,10 +16,21 @@ export interface AppUser {
 
 export type FitGap = 'fit' | 'partial' | 'gap'
 
-/** Map of IFS module id -> selection state. Stored in Scope.modules. */
+/** A delivery phase in the scope solution map (legend entry). */
+export interface ScopePhase {
+  id: string
+  label: string
+  colour: string
+}
+
+/**
+ * Map of solution-map tile id -> selection state. Stored in Scope.modules.
+ * `phaseId` links the tile to a ScopePhase, indicating the phase it is taken
+ * into use; it is set whenever `selected` is true.
+ */
 export type ScopeModules = Record<
   string,
-  { selected: boolean; fitGap?: FitGap; notes?: string }
+  { selected: boolean; fitGap?: FitGap; notes?: string; phaseId?: string }
 >
 
 export interface ScopeRequirement {
@@ -72,8 +83,12 @@ export interface EstimationSummary {
 
 /* ---------- Proposal content (ProposalContent / ProposalDefaults models) ---------- */
 
-/** RACI cell value. */
-export type RaciValue = 'R' | 'A' | 'C' | 'I' | ''
+/** A single RACI role letter. */
+export type RaciLetter = 'R' | 'A' | 'C' | 'I'
+
+/** RACI cell value: the set of letters assigned to a role for an activity. A
+ * party can hold several (e.g. both Accountable and Responsible → `['A','R']`). */
+export type RaciValue = RaciLetter[]
 
 /** A RACI column (role). `id` keys each row's cells; `label` is the display name. */
 export interface RaciColumn {
@@ -83,7 +98,7 @@ export interface RaciColumn {
 
 export interface RaciRow {
   activity: string
-  /** value per column id */
+  /** letters per column id */
   cells: Record<string, RaciValue>
 }
 
@@ -179,9 +194,21 @@ export interface ProposalNarrative {
 
 /* ---------- Timeline (stored as JSON on Opportunity.timelineConfig) ---------- */
 
+export interface TimelineGroup {
+  id: string
+  label: string
+  colour: string
+  phaseIds: string[] // phases this group spans (group bracket = min start → max end)
+  offsetY?: number // vertical px offset of the band from its default stacked position
+}
+
 export interface TimelineConfig {
   pxPerMonth?: number
   lanes?: Record<string, number> // rolloutId -> lane index
+  groups?: TimelineGroup[] // editable bracket annotations grouping arbitrary phases
+  background?: string // roadmap card background colour (#RRGGBB)
+  // Per-go-live vertical offset (px from its lane centre), keyed by `${phaseId}:${yyyy-MM-dd}`.
+  goLiveOffsets?: Record<string, number>
 }
 
 /* ---------- API helpers ---------- */

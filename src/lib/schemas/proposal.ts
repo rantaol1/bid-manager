@@ -1,8 +1,11 @@
 import { z } from 'zod'
+import { parseRaciCell } from '@/lib/raci'
 
 /* ---------- Structured block schemas ---------- */
 
-const raciValue = z.enum(['R', 'A', 'C', 'I', ''])
+// A cell holds a set of RACI letters. Legacy single-letter strings ('A', '') and
+// combined strings ('A/R') are coerced to canonical letter arrays.
+const raciCell = z.preprocess((v) => parseRaciCell(v), z.array(z.enum(['R', 'A', 'C', 'I'])).max(4))
 
 const raciMatrix = z.object({
   columns: z.array(z.object({ id: z.string().min(1).max(60), label: z.string().min(1).max(60).trim() })).max(12),
@@ -10,7 +13,7 @@ const raciMatrix = z.object({
     .array(
       z.object({
         activity: z.string().min(1).max(200).trim(),
-        cells: z.record(z.string(), raciValue),
+        cells: z.record(z.string(), raciCell),
       })
     )
     .max(60),
@@ -93,10 +96,11 @@ const reference = z.object({
 export const proposalContentSchema = z.object({
   // narrative
   executiveSummary: executiveSummary.nullable().optional(),
-  understanding: z.string().max(4000).nullable().optional(),
+  // Rich-text (HTML) fields — larger cap than plain text to allow markup.
+  understanding: z.string().max(20000).nullable().optional(),
   valueDrivers: z.array(valueDriver).max(4).nullable().optional(),
-  commercialModel: z.string().max(4000).nullable().optional(),
-  recommendation: z.string().max(4000).nullable().optional(),
+  commercialModel: z.string().max(20000).nullable().optional(),
+  recommendation: z.string().max(20000).nullable().optional(),
   teamProfiles: z.array(teamProfile).max(6).nullable().optional(),
   references: z.array(reference).max(3).nullable().optional(),
   contactName: z.string().max(120).nullable().optional(),
@@ -116,15 +120,22 @@ export const proposalContentSchema = z.object({
   adoptionSteps: structuredBlocks.adoptionSteps.nullable().optional(),
   goLiveSteps: structuredBlocks.goLiveSteps.nullable().optional(),
   whyArcwide: structuredBlocks.whyArcwide.nullable().optional(),
+  // Chosen deck-template version per output kind (null => workspace default deck).
+  fullDeckVersionId: z.string().min(1).nullable().optional(),
+  boardDeckVersionId: z.string().min(1).nullable().optional(),
 })
 
 /** Global defaults — all structured blocks required (defaults are always complete). */
 export const proposalDefaultsSchema = z.object(structuredBlocks)
 
-/** Generation request. */
+/** Generation request. When `selectedSections` is omitted, the chosen deck
+ *  version's section selection is used. `pptxTemplateId`: a string selects that
+ *  .potx template (replace mode); `null` forces the built-in design; omitted keeps
+ *  the legacy behaviour (use the active .potx template if one exists). */
 export const generateProposalSchema = z.object({
   type: z.enum(['full_proposal', 'board_summary']),
-  selectedSections: z.array(z.string().min(1)).min(1).max(60),
+  selectedSections: z.array(z.string().min(1)).min(1).max(60).optional(),
+  pptxTemplateId: z.string().min(1).nullable().optional(),
 })
 
 export type ProposalContentInput = z.infer<typeof proposalContentSchema>

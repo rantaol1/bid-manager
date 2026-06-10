@@ -1,5 +1,6 @@
 import type pptxgen from 'pptxgenjs'
 import { addRoadmap } from '@/lib/documents/pptx-helpers'
+import { formatRaciCell } from '@/lib/raci'
 import { DEFAULT_RISKS } from '../static-content'
 import type { ProposalData } from '@/lib/documents/proposal-data'
 import {
@@ -101,7 +102,7 @@ export function raciSlide(pptx: pptxgen, data: ProposalData, n: number) {
   brandedTable(
     slide,
     ['Activity', ...columns.map((c) => c.label)],
-    rows.map((r) => [r.activity, ...columns.map((c) => r.cells[c.id] ?? '')]),
+    rows.map((r) => [r.activity, ...columns.map((c) => formatRaciCell(r.cells[c.id]))]),
     { y: 1.4, colW: [activityW, ...columns.map(() => colW)], fontSize: columns.length > 6 ? 8 : 9 }
   )
 }

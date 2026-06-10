@@ -10,6 +10,8 @@ import {
   addNumberedSteps,
   addPlaceholder,
 } from '../shared/branding'
+import { richTextToPptxRuns } from '@/lib/documents/rich-text-pptx'
+import { richTextIsEmpty } from '@/lib/rich-text'
 
 /** Sum phase costs by rollout name. */
 function costByRollout(data: ProposalData): Array<[string, number]> {
@@ -56,18 +58,23 @@ export function commercialsSlide(pptx: pptxgen, data: ProposalData, n: number) {
     )
   }
 
-  const model = data.narrative.commercialModel?.trim()
-  slide.addText(model || '[Describe the commercial model — e.g. time & materials with a capped envelope, milestone-based, or fixed-price per phase.]', {
-    x: SLIDE.margin,
-    y: 3.4,
-    w: SLIDE.contentW,
-    h: 1.4,
-    fontFace: BRAND.font,
-    fontSize: 12,
-    italic: !model,
-    color: BRAND.darkGray,
-    valign: 'top',
-  })
+  const empty = richTextIsEmpty(data.narrative.commercialModel)
+  slide.addText(
+    empty
+      ? '[Describe the commercial model — e.g. time & materials with a capped envelope, milestone-based, or fixed-price per phase.]'
+      : richTextToPptxRuns(data.narrative.commercialModel, { fontSize: 12 }),
+    {
+      x: SLIDE.margin,
+      y: 3.4,
+      w: SLIDE.contentW,
+      h: 1.4,
+      fontFace: BRAND.font,
+      fontSize: 12,
+      italic: empty,
+      color: BRAND.darkGray,
+      valign: 'top',
+    }
+  )
 }
 
 export function whyArcwideSlide(pptx: pptxgen, data: ProposalData, n: number) {

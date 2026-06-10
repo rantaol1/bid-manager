@@ -2,13 +2,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/fetcher'
-import type { ScopeModules, ScopeRequirement, ScopeRisk } from '@/types'
+import type { ScopeModules, ScopeRequirement, ScopeRisk, ScopePhase } from '@/types'
 
 export interface ScopeData {
   modules: ScopeModules
+  phases: ScopePhase[]
   requirements: ScopeRequirement[]
   assumptions: string[]
   exclusions: string[]
+  deferred: string[]
   risks: ScopeRisk[]
 }
 

@@ -20,6 +20,7 @@ export interface EstPhase {
   id: string
   name: string
   rolloutId: string
+  colour?: string | null
   startDate: string
   endDate: string
   workingDays: number

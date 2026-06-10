@@ -54,7 +54,11 @@ export function useSaveProposalDefaults() {
 export function useGenerateProposal(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { type: DeliverableType; selectedSections: string[] }) =>
+    mutationFn: (input: {
+      type: DeliverableType
+      selectedSections: string[]
+      pptxTemplateId?: string | null
+    }) =>
       apiFetch(`/api/opportunities/${id}/generate/proposal`, {
         method: 'POST',
         body: JSON.stringify(input),

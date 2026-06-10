@@ -2,6 +2,7 @@ export const ALLOWED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.openxmlformats-officedocument.presentationml.template', // .potx
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'image/jpeg',
   'image/png',

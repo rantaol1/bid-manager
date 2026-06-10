@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { eachDayOfInterval, isWeekend } from 'date-fns'
 import { BUILTIN_STRUCTURED_CONTENT } from '../src/lib/documents/slides/static-content'
+import { defaultSectionSelection, type DeliverableType } from '../src/lib/documents/proposal-sections'
 
 const prisma = new PrismaClient()
 
@@ -25,6 +26,37 @@ const DEFAULT_ROLES: Array<{ roleName: string; rate: number; sortOrder: number }
   { roleName: 'Change Management Lead', rate: 1100, sortOrder: 9 },
 ]
 
+/** Idempotently create a workspace-default deck template with a Version 1 that
+ *  mirrors the built-in structured defaults and the section catalogue's defaults. */
+async function seedDeckTemplate(kind: DeliverableType, name: string, description: string) {
+  const templateId = `seed-deck-${kind}`
+  const versionId = `${templateId}-v1`
+
+  await prisma.deckTemplate.upsert({
+    where: { id: templateId },
+    update: { name, description, kind, isWorkspaceDefault: true },
+    create: { id: templateId, name, description, kind, isWorkspaceDefault: true, createdBy: SEED_USER },
+  })
+
+  const versionData = {
+    ...(BUILTIN_STRUCTURED_CONTENT as unknown as object),
+    sectionSelection: defaultSectionSelection(kind) as unknown as Prisma.InputJsonValue,
+  }
+  await prisma.deckTemplateVersion.upsert({
+    where: { id: versionId },
+    update: versionData as Prisma.DeckTemplateVersionUncheckedUpdateInput,
+    create: {
+      id: versionId,
+      templateId,
+      version: 1,
+      createdBy: SEED_USER,
+      ...versionData,
+    } as Prisma.DeckTemplateVersionUncheckedCreateInput,
+  })
+
+  await prisma.deckTemplate.update({ where: { id: templateId }, data: { defaultVersionId: versionId } })
+}
+
 async function main() {
   console.error('[seed] Seeding default role configs...')
   for (const r of DEFAULT_ROLES) {
@@ -41,6 +73,10 @@ async function main() {
     update: BUILTIN_STRUCTURED_CONTENT as unknown as Prisma.ProposalDefaultsUpdateInput,
     create: { id: 'singleton', ...(BUILTIN_STRUCTURED_CONTENT as unknown as object) } as Prisma.ProposalDefaultsCreateInput,
   })
+
+  console.error('[seed] Seeding workspace-default deck templates...')
+  await seedDeckTemplate('full_proposal', 'Standard Arcwide proposal', 'The default full proposal deck.')
+  await seedDeckTemplate('board_summary', 'Standard board summary', 'The default board summary deck.')
 
   console.error('[seed] Seeding sample customer...')
   await prisma.customer.upsert({

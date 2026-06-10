@@ -69,9 +69,11 @@ model Scope {
   opportunityId String      @unique
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   modules       Json        @default("{}")
+  scopePhases   Json        @default("[]")
   requirements  Json        @default("[]")
   assumptions   String[]
   exclusions    String[]
+  deferred      String[]
   risks         Json        @default("[]")
   updatedAt     DateTime    @updatedAt
 }
@@ -219,6 +221,12 @@ model ProposalContent {
   goLiveSteps         Json?
   whyArcwide          Json?
 
+  // Chosen deck-template version per output kind (null => workspace default deck).
+  fullDeckVersionId  String?
+  fullDeckVersion    DeckTemplateVersion? @relation("FullDeckSelection", fields: [fullDeckVersionId], references: [id], onDelete: SetNull)
+  boardDeckVersionId String?
+  boardDeckVersion   DeckTemplateVersion? @relation("BoardDeckSelection", fields: [boardDeckVersionId], references: [id], onDelete: SetNull)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -272,4 +280,104 @@ model ProposalDefaults {
   goLiveSteps         Json
   whyArcwide          Json
   updatedAt           DateTime @updatedAt
+}
+
+/// A named, workspace-wide deck template (e.g. "Standard Arcwide deck"). Scoped to
+/// one output kind. Holds an ordered set of immutable versions; one is the default.
+model DeckTemplate {
+  id                 String                @id @default(cuid())
+  name               String
+  description        String?
+  kind               String // 'full_proposal' | 'board_summary'
+  isWorkspaceDefault Boolean               @default(false)
+  defaultVersionId   String?               @unique
+  defaultVersion     DeckTemplateVersion?  @relation("DefaultVersion", fields: [defaultVersionId], references: [id], onDelete: SetNull)
+  versions           DeckTemplateVersion[] @relation("TemplateVersions")
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  createdBy          String
+
+  @@index([kind])
+}
+
+/// An immutable snapshot of a deck's editable content layer: structured blocks,
+/// narrative defaults, section on/off selection, and branding overrides. Editing a
+/// template always creates a new version.
+model DeckTemplateVersion {
+  id         String       @id @default(cuid())
+  templateId String
+  template   DeckTemplate @relation("TemplateVersions", fields: [templateId], references: [id], onDelete: Cascade)
+  version    Int
+  label      String?
+
+  // Structured blocks (always complete — same shape as ProposalDefaults).
+  raci                Json
+  crims               Json
+  methodologyPhases   Json
+  waysOfWorking       Json
+  governance          Json
+  customerCommitments Json
+  dataMigrationSteps  Json
+  integrationSteps    Json
+  testingSteps        Json
+  adoptionSteps       Json
+  goLiveSteps          Json
+  whyArcwide          Json
+
+  // Narrative defaults (null => no template-level narrative for that field).
+  executiveSummary Json?
+  understanding    String?
+  valueDrivers     Json?
+  commercialModel  String?
+  recommendation   String?
+  teamProfiles     Json?
+  references       Json?
+  contactName      String?
+  contactTitle     String?
+  contactEmail     String?
+  contactPhone     String?
+
+  // Section on/off selection, e.g. { executive_summary: true, raci: false }.
+  sectionSelection Json
+
+  // Branding overrides (null => fall back to BrandingSettings singleton).
+  companyName String?
+  footerText  String?
+
+  defaultFor          DeckTemplate?     @relation("DefaultVersion")
+  fullDeckSelections  ProposalContent[] @relation("FullDeckSelection")
+  boardDeckSelections ProposalContent[] @relation("BoardDeckSelection")
+  createdAt           DateTime          @default(now())
+  createdBy           String
+
+  @@unique([templateId, version])
+  @@index([templateId])
+}
+
+/// An uploaded .potx PowerPoint template used in REPLACE mode: generation composes
+/// the output deck from this file's slides (mapped per section) instead of the
+/// code-drawn pptxgenjs deck. The stored file is the NORMALIZED buffer (its main
+/// part rewritten to ...presentation.main+xml so docxtemplater/automizer accept it).
+model PptxDeckTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  deckKind      String // 'full_proposal' | 'board_summary'
+  isActive      Boolean  @default(false) // the active template for deckKind (replace mode)
+
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  wasNormalized Boolean  @default(false) // true if a .potx content-type was rewritten
+
+  // Parsed slide inventory: [{ index, title, tokens: string[], hasTable: boolean }]
+  slides  Json
+  // { sectionMap: { [sectionId]: slideIndex }, genericSlides: [{ slideIndex, position }], visualSplice: string[] }
+  mapping Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+
+  @@index([deckKind])
 }

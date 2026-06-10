@@ -46,6 +46,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (parsed.closeDate !== undefined) data.closeDate = parsed.closeDate
     if (parsed.tags !== undefined) data.tags = parsed.tags
     if (parsed.notes !== undefined) data.notes = parsed.notes || null
+    if (parsed.timelineConfig !== undefined) data.timelineConfig = parsed.timelineConfig
 
     const stageChanged = parsed.stage !== undefined && parsed.stage !== existing.stage
 

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/fetcher'
+import type { TimelineConfig } from '@/types'
 
 export interface RoleConfigDTO {
   id: string
@@ -53,6 +54,16 @@ export function useRollouts(id: string) {
   return useQuery({
     queryKey: ['rollouts', id],
     queryFn: () => apiFetch<{ data: RolloutDTO[] }>(`/api/opportunities/${id}/rollouts`).then((r) => r.data),
+  })
+}
+
+export function useTimelineConfig(id: string) {
+  return useQuery({
+    queryKey: ['timeline-config', id],
+    queryFn: () =>
+      apiFetch<{ timelineConfig: TimelineConfig | null }>(`/api/opportunities/${id}`).then(
+        (o) => o.timelineConfig ?? {}
+      ),
   })
 }
 
@@ -138,6 +149,19 @@ export function useEstimationMutations(id: string) {
     onSuccess: invalidateRollouts,
   })
 
+  const saveTimelineConfig = useMutation({
+    mutationFn: (timelineConfig: TimelineConfig) =>
+      apiFetch(`/api/opportunities/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ timelineConfig }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['timeline-config', id] })
+      // The plan-slide preview reads the card background from proposal data.
+      qc.invalidateQueries({ queryKey: ['proposalData', id] })
+    },
+  })
+
   return {
     saveRoles,
     createRollout,
@@ -147,5 +171,6 @@ export function useEstimationMutations(id: string) {
     updatePhase,
     deletePhase,
     saveAllocations,
+    saveTimelineConfig,
   }
 }

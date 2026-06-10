@@ -19,6 +19,24 @@ export const createOpportunitySchema = z.object({
   notes: z.string().max(5000).optional().or(z.literal('')),
 })
 
+const timelineGroupSchema = z.object({
+  id: z.string().min(1).max(64),
+  label: z.string().max(120),
+  colour: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid colour'),
+  phaseIds: z.array(z.string().max(64)).max(500),
+  offsetY: z.number().min(-5000).max(5000).optional(),
+})
+
+export const timelineConfigSchema = z
+  .object({
+    pxPerMonth: z.number().min(10).max(500).optional(),
+    lanes: z.record(z.string(), z.number()).optional(),
+    groups: z.array(timelineGroupSchema).max(50).optional(),
+    background: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid colour').optional(),
+    goLiveOffsets: z.record(z.string(), z.number().min(-2000).max(2000)).optional(),
+  })
+  .strict()
+
 export const updateOpportunitySchema = z.object({
   name: z.string().min(1).max(200).trim().optional(),
   stage: z.enum(STAGE_IDS).optional(),
@@ -28,6 +46,7 @@ export const updateOpportunitySchema = z.object({
   closeDate: optionalDate,
   tags: z.array(z.string().max(40)).max(20).optional(),
   notes: z.string().max(5000).optional().or(z.literal('')),
+  timelineConfig: timelineConfigSchema.optional(),
 })
 
 export const stageChangeSchema = z.object({

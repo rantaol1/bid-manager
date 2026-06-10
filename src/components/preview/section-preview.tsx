@@ -2,10 +2,13 @@
 
 import { IFS_MODULES } from '@/lib/constants/ifs-modules'
 import { formatCurrency } from '@/lib/utils'
+import { formatRaciCell } from '@/lib/raci'
 import { DEFAULT_RISKS } from '@/lib/documents/slides/static-content'
 import type { ProposalData } from '@/lib/documents/proposal-data'
 import { BRAND } from '@/lib/documents/slides/shared/branding'
 import { SlideCanvas, Box } from './slide-canvas'
+import { RichTextView } from './rich-text-view'
+import { PreviewTower } from './preview-tower'
 import {
   PreviewSectionLabel,
   PreviewTitle,
@@ -51,7 +54,6 @@ function TwoCol({ leftTitle, rightTitle, left, right }: { leftTitle: string; rig
 function Commercials({ data }: { data: ProposalData }) {
   const { projectTotalCost, currency, durationMonths } = data.summary
   const rollouts = costByRollout(data)
-  const model = data.narrative.commercialModel?.trim()
   return (
     <>
       <PreviewSectionLabel label="Commercials" />
@@ -68,8 +70,8 @@ function Commercials({ data }: { data: ProposalData }) {
           colW={[3.0, 1.5]}
         />
       )}
-      <Box x={0.5} y={3.4} w={9} style={{ fontSize: 12, color: `#${BRAND.darkGray}`, fontStyle: model ? 'normal' : 'italic' }}>
-        {model || '[Describe the commercial model in the Proposal tab.]'}
+      <Box x={0.5} y={3.4} w={9}>
+        <RichTextView value={data.narrative.commercialModel} placeholder="[Describe the commercial model in the Proposal tab.]" fontSize={12} color={`#${BRAND.darkGray}`} />
       </Box>
     </>
   )
@@ -105,8 +107,8 @@ function renderBody(key: string, data: ProposalData) {
         <>
           <PreviewSectionLabel label="Understanding" />
           <PreviewTitle title="Our understanding" />
-          <Box x={0.5} y={1.4} w={9} style={{ fontSize: 13, color: `#${BRAND.darkGray}`, lineHeight: 1.3 }}>
-            {narrative.understanding?.trim() || '[Add a narrative about the customer’s business, challenges and objectives.]'}
+          <Box x={0.5} y={1.4} w={9}>
+            <RichTextView value={narrative.understanding} placeholder="[Add a narrative about the customer’s business, challenges and objectives.]" fontSize={13} color={`#${BRAND.darkGray}`} />
           </Box>
           <PreviewCards
             y={3.55}
@@ -148,8 +150,8 @@ function renderBody(key: string, data: ProposalData) {
         <>
           <PreviewSectionLabel label="Recommendation" />
           <PreviewTitle title="Recommendation & next steps" />
-          <Box x={0.5} y={1.4} w={9} style={{ fontSize: 14, color: `#${BRAND.darkGray}`, fontStyle: narrative.recommendation?.trim() ? 'normal' : 'italic' }}>
-            {narrative.recommendation?.trim() || '[Add the recommendation statement in the Proposal tab.]'}
+          <Box x={0.5} y={1.4} w={9}>
+            <RichTextView value={narrative.recommendation} placeholder="[Add the recommendation statement in the Proposal tab.]" fontSize={14} color={`#${BRAND.darkGray}`} />
           </Box>
           <PreviewSteps y={3.2} h={1.7} steps={['Board decision', 'Commercial negotiation', 'Contract & mobilise', 'Initiate']} />
         </>
@@ -202,7 +204,7 @@ function renderBody(key: string, data: ProposalData) {
           <PreviewTitle title="RACI matrix" />
           <PreviewTable
             headers={['Activity', ...columns.map((c) => c.label)]}
-            rows={rows.map((r) => [r.activity, ...columns.map((c) => r.cells[c.id] ?? '')])}
+            rows={rows.map((r) => [r.activity, ...columns.map((c) => formatRaciCell(r.cells[c.id]))])}
             y={1.4}
             colW={[activityW, ...columns.map(() => colW)]}
             fontSize={columns.length > 6 ? 8 : 9}
@@ -288,16 +290,9 @@ function renderBody(key: string, data: ProposalData) {
     /* ---- data-driven (other tabs) ---- */
     case 'solution_overview': {
       const mods = selectedModules(data)
-      if (!mods.length) return <><PreviewSectionLabel label="Solution" /><PreviewTitle title="Solution overview & target architecture" /><PreviewPlaceholder message="Select modules in the Scope tab." /></>
-      const byCat = new Map<string, string[]>()
-      for (const m of mods) byCat.set(m.category, [...(byCat.get(m.category) ?? []), m.name])
-      return (
-        <>
-          <PreviewSectionLabel label="Solution" />
-          <PreviewTitle title="Solution overview & target architecture" />
-          <PreviewTable headers={['Layer', 'IFS Cloud modules']} rows={[...byCat.entries()].map(([cat, names]) => [cat, names.join(', ')])} y={1.4} colW={[2.2, 6.8]} fontSize={12} />
-        </>
-      )
+      if (!mods.length) return <><PreviewSectionLabel label="Solution" /><PreviewTitle title="Solution set overview & phasing" /><PreviewPlaceholder message="Assign modules to phases in the Scope tab." /></>
+      // Full-bleed: the legend acts as the header, so the tower gets the whole canvas.
+      return <PreviewTower scope={scope} box={{ x: 0.1, y: 0.1, w: 9.8, h: 5.0 }} />
     }
     case 'scope_in': {
       const mods = selectedModules(data)
@@ -311,7 +306,7 @@ function renderBody(key: string, data: ProposalData) {
       )
     }
     case 'scope_out': {
-      const deferred = scope.requirements.filter((r) => r.priority === 'wont').map((r) => r.title)
+      const deferred = scope.deferred
       return (
         <>
           <PreviewSectionLabel label="Scope" />

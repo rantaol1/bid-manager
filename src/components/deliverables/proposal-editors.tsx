@@ -1,11 +1,14 @@
 'use client'
 
-import { Plus, Trash2, RotateCcw, Save, ClipboardPlus } from 'lucide-react'
+import { Plus, Trash2, RotateCcw, Save, ClipboardPlus, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { isRichHtml, plainTextToHtml } from '@/lib/rich-text'
+import { RACI_LETTERS, RACI_LETTER_LABEL, formatRaciCell, toggleRaciLetter } from '@/lib/raci'
 import { useTemplates } from '@/hooks/use-templates'
 import type { ProposalContentInput } from '@/lib/schemas/proposal'
 import type { EditorKey } from '@/lib/documents/proposal-sections'
@@ -15,6 +18,7 @@ import type {
   ProposalStructuredContent,
   RaciMatrix,
   RaciValue,
+  RaciLetter,
   CrimItem,
   CrimType,
   MethodologyPhase,
@@ -117,12 +121,16 @@ function StructuredWrapper({
 
 /* ---------------- standard-text picker ---------------- */
 
-function appendText(existing: string | null | undefined, addition: string): string {
-  return existing?.trim() ? `${existing}\n\n${addition}` : addition
+/** Append a (plain-text) standard-text snippet to a rich-text (HTML) field. */
+export function appendText(existing: string | null | undefined, addition: string): string {
+  const add = plainTextToHtml(addition)
+  if (!existing?.trim()) return add
+  const base = isRichHtml(existing) ? existing : plainTextToHtml(existing)
+  return base + add
 }
 
 /** Dropdown of standard-text snippets from uploaded text_source templates. */
-function StandardTextPicker({ onInsert }: { onInsert: (text: string) => void }) {
+export function StandardTextPicker({ onInsert }: { onInsert: (text: string) => void }) {
   const { data } = useTemplates({ kind: 'text_source' })
   const snippets = (data ?? []).flatMap((s) =>
     (s.snippets ?? []).map((sn) => ({ source: s.name, heading: sn.heading, text: sn.text || sn.heading }))
@@ -153,7 +161,7 @@ function StandardTextPicker({ onInsert }: { onInsert: (text: string) => void }) 
 
 /* ---------------- narrative editors ---------------- */
 
-function ExecutiveSummaryEditor({ content, update }: { content: Draft; update: Update }) {
+export function ExecutiveSummaryEditor({ content, update }: { content: Draft; update: Update }) {
   const es: ExecutiveSummaryContent = content.executiveSummary ?? {
     opportunity: '',
     whatWePropose: '',
@@ -181,7 +189,7 @@ function ExecutiveSummaryEditor({ content, update }: { content: Draft; update: U
   )
 }
 
-function ValueDriversEditor({ content, update }: { content: Draft; update: Update }) {
+export function ValueDriversEditor({ content, update }: { content: Draft; update: Update }) {
   const rows: ValueDriver[] = content.valueDrivers ?? []
   const set = (next: ValueDriver[]) => update({ valueDrivers: next })
   return (
@@ -198,7 +206,7 @@ function ValueDriversEditor({ content, update }: { content: Draft; update: Updat
   )
 }
 
-function TeamReferencesEditor({ content, update }: { content: Draft; update: Update }) {
+export function TeamReferencesEditor({ content, update }: { content: Draft; update: Update }) {
   const people: TeamProfile[] = content.teamProfiles ?? []
   const refs: ProposalReference[] = content.references ?? []
   return (
@@ -228,7 +236,7 @@ function TeamReferencesEditor({ content, update }: { content: Draft; update: Upd
   )
 }
 
-function ContactEditor({ content, update }: { content: Draft; update: Update }) {
+export function ContactEditor({ content, update }: { content: Draft; update: Update }) {
   return (
     <div className="space-y-3">
       <div><Label className="text-xs">Name</Label><Input className="mt-1" value={content.contactName ?? ''} onChange={(e) => update({ contactName: e.target.value })} /></div>
@@ -241,7 +249,31 @@ function ContactEditor({ content, update }: { content: Draft; update: Update }) 
 
 /* ---------------- structured (default-backed) editors ---------------- */
 
-const RACI_VALUES: RaciValue[] = ['', 'R', 'A', 'C', 'I']
+/** A single RACI cell: a compact dropdown of R/A/C/I checkboxes so a party can
+ * hold several roles for one activity (e.g. Accountable + Responsible → "R/A"). */
+function RaciCell({ value, onToggle }: { value: RaciValue; onToggle: (letter: RaciLetter) => void }) {
+  const label = formatRaciCell(value)
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button type="button" className={selectClass + ' flex w-full items-center justify-center gap-1 px-1'} aria-label="Set RACI assignment">
+            <span className="truncate">{label || '–'}</span>
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+          </button>
+        }
+      />
+      <DropdownMenuContent align="center" className="min-w-44">
+        {RACI_LETTERS.map((l) => (
+          <DropdownMenuCheckboxItem key={l} checked={value.includes(l)} onCheckedChange={() => onToggle(l)}>
+            <span className="w-3 font-semibold">{l}</span>
+            <span className="text-xs text-muted-foreground">{RACI_LETTER_LABEL[l]}</span>
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function RaciEditor({ value, onChange }: { value: RaciMatrix; onChange: (v: RaciMatrix) => void }) {
   const { columns, rows } = value
@@ -265,10 +297,12 @@ export function RaciEditor({ value, onChange }: { value: RaciMatrix; onChange: (
     const id = raciColumnId('role', columns.length) + '-' + Math.random().toString(36).slice(2, 6)
     onChange({ ...value, columns: [...columns, { id, label: 'New role' }] })
   }
-  function setCell(rowIdx: number, colId: string, v: RaciValue) {
+  function toggleCell(rowIdx: number, colId: string, letter: RaciLetter) {
     onChange({
       ...value,
-      rows: rows.map((r, j) => (j === rowIdx ? { ...r, cells: { ...r.cells, [colId]: v } } : r)),
+      rows: rows.map((r, j) =>
+        j === rowIdx ? { ...r, cells: { ...r.cells, [colId]: toggleRaciLetter(r.cells[colId] ?? [], letter) } } : r
+      ),
     })
   }
   function setActivity(rowIdx: number, activity: string) {
@@ -305,14 +339,7 @@ export function RaciEditor({ value, onChange }: { value: RaciMatrix; onChange: (
         <div key={i} className="grid items-center gap-1" style={{ gridTemplateColumns: gridCols }}>
           <Input className="h-8" value={row.activity} onChange={(e) => setActivity(i, e.target.value)} />
           {columns.map((c) => (
-            <select
-              key={c.id}
-              className={selectClass + ' px-1 text-center'}
-              value={row.cells[c.id] ?? ''}
-              onChange={(e) => setCell(i, c.id, e.target.value as RaciValue)}
-            >
-              {RACI_VALUES.map((v) => <option key={v} value={v}>{v || '–'}</option>)}
-            </select>
+            <RaciCell key={c.id} value={row.cells[c.id] ?? []} onToggle={(letter) => toggleCell(i, c.id, letter)} />
           ))}
           <Button
             variant="ghost"
@@ -431,21 +458,21 @@ export function SectionEditor({ editorKey, content, update, defaults, isAdmin, o
     return (
       <div className="space-y-2">
         <StandardTextPicker onInsert={(t) => update({ understanding: appendText(content.understanding, t) })} />
-        <Textarea rows={8} placeholder="Narrative about the customer’s business…" value={content.understanding ?? ''} onChange={(e) => update({ understanding: e.target.value })} />
+        <RichTextEditor placeholder="Narrative about the customer’s business…" value={content.understanding ?? ''} onChange={(html) => update({ understanding: html })} />
       </div>
     )
   if (editorKey === 'commercialModel')
     return (
       <div className="space-y-2">
         <StandardTextPicker onInsert={(t) => update({ commercialModel: appendText(content.commercialModel, t) })} />
-        <Textarea rows={8} placeholder="Describe the commercial model…" value={content.commercialModel ?? ''} onChange={(e) => update({ commercialModel: e.target.value })} />
+        <RichTextEditor placeholder="Describe the commercial model…" value={content.commercialModel ?? ''} onChange={(html) => update({ commercialModel: html })} />
       </div>
     )
   if (editorKey === 'recommendation')
     return (
       <div className="space-y-2">
         <StandardTextPicker onInsert={(t) => update({ recommendation: appendText(content.recommendation, t) })} />
-        <Textarea rows={8} placeholder="Recommendation statement…" value={content.recommendation ?? ''} onChange={(e) => update({ recommendation: e.target.value })} />
+        <RichTextEditor placeholder="Recommendation statement…" value={content.recommendation ?? ''} onChange={(html) => update({ recommendation: html })} />
       </div>
     )
   if (editorKey === 'valueDrivers') return <ValueDriversEditor content={content} update={update} />

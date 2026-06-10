@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { EstRoleConfig, EstRollout } from '@/lib/estimation'
+import type { TimelineConfig, TimelineGroup } from '@/types'
+import { DEFAULT_ROADMAP_BG } from '@/lib/roadmap-style'
 
 export interface LoadedEstimation {
   opportunity: {
@@ -10,6 +12,12 @@ export interface LoadedEstimation {
   }
   roleConfigs: EstRoleConfig[]
   rollouts: EstRollout[]
+  /** Roadmap card background colour (#RRGGBB), from the opportunity timeline config. */
+  background: string
+  /** Editable bracket groups from the opportunity timeline config. */
+  groups: TimelineGroup[]
+  /** Per-go-live vertical offsets (px), keyed by `${phaseId}:${yyyy-MM-dd}`. */
+  goLiveOffsets: Record<string, number>
 }
 
 /** Load and normalise all estimation data for an opportunity into plain shapes. */
@@ -27,6 +35,11 @@ export async function loadEstimation(opportunityId: string): Promise<LoadedEstim
   })
 
   if (!opp) return null
+
+  const timelineConfig = (opp.timelineConfig ?? null) as TimelineConfig | null
+  const background = timelineConfig?.background ?? DEFAULT_ROADMAP_BG
+  const groups = timelineConfig?.groups ?? []
+  const goLiveOffsets = timelineConfig?.goLiveOffsets ?? {}
 
   const roleConfigs: EstRoleConfig[] = opp.roleConfigs.map((r) => ({
     id: r.id,
@@ -46,6 +59,7 @@ export async function loadEstimation(opportunityId: string): Promise<LoadedEstim
       id: p.id,
       name: p.name,
       rolloutId: p.rolloutId,
+      colour: p.colour,
       startDate: p.startDate.toISOString(),
       endDate: p.endDate.toISOString(),
       workingDays: p.workingDays,
@@ -67,5 +81,8 @@ export async function loadEstimation(opportunityId: string): Promise<LoadedEstim
     },
     roleConfigs,
     rollouts,
+    background,
+    groups,
+    goLiveOffsets,
   }
 }

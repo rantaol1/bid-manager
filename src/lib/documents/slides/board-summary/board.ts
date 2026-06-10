@@ -12,6 +12,9 @@ import {
   addNumberedSteps,
   addPlaceholder,
 } from '../shared/branding'
+import { addSolutionTowerSlide } from '../shared/solution-tower'
+import { richTextToPptxRuns } from '@/lib/documents/rich-text-pptx'
+import { richTextIsEmpty } from '@/lib/rich-text'
 
 function selectedModuleNames(data: ProposalData): string[] {
   return IFS_MODULES.filter((m) => data.scope.modules[m.id]?.selected).map((m) => m.name)
@@ -59,18 +62,13 @@ export function understandingBoard(pptx: pptxgen, data: ProposalData, n: number)
 }
 
 export function solutionBoard(pptx: pptxgen, data: ProposalData, n: number) {
-  const slide = contentSlide(pptx, { label: 'Solution', title: 'IFS Cloud scope at a glance', slideNumber: n })
-  const names = selectedModuleNames(data)
-  if (names.length === 0) {
-    addPlaceholder(slide, 'Select modules in the Scope tab to populate this slide.')
+  if (selectedModuleNames(data).length === 0) {
+    const slide = contentSlide(pptx, { label: 'Solution', title: 'IFS Cloud scope at a glance', slideNumber: n })
+    addPlaceholder(slide, 'Assign modules to phases in the Scope tab to populate this slide.')
     return
   }
-  addCards(slide, names.map((nme) => ({ title: nme, description: '' })), {
-    y: 1.4,
-    cols: 4,
-    h: 0.8,
-    rowGap: 0.2,
-  })
+  // Full-bleed tower slide (the legend acts as the header).
+  addSolutionTowerSlide(pptx, data.scope)
 }
 
 export function scopeBoard(pptx: pptxgen, data: ProposalData, n: number) {
@@ -147,17 +145,22 @@ export function whyArcwideBoard(pptx: pptxgen, data: ProposalData, n: number) {
 
 export function recommendationBoard(pptx: pptxgen, data: ProposalData, n: number) {
   const slide = contentSlide(pptx, { label: 'Recommendation', title: 'Recommendation & next steps', slideNumber: n })
-  const rec = data.narrative.recommendation?.trim()
-  slide.addText(rec || '[Add the recommendation statement in the proposal builder.]', {
-    x: SLIDE.margin,
-    y: 1.4,
-    w: SLIDE.contentW,
-    h: 1.4,
-    fontFace: BRAND.font,
-    fontSize: 14,
-    italic: !rec,
-    color: BRAND.darkGray,
-    valign: 'top',
-  })
+  const empty = richTextIsEmpty(data.narrative.recommendation)
+  slide.addText(
+    empty
+      ? '[Add the recommendation statement in the proposal builder.]'
+      : richTextToPptxRuns(data.narrative.recommendation, { fontSize: 14 }),
+    {
+      x: SLIDE.margin,
+      y: 1.4,
+      w: SLIDE.contentW,
+      h: 1.4,
+      fontFace: BRAND.font,
+      fontSize: 14,
+      italic: empty,
+      color: BRAND.darkGray,
+      valign: 'top',
+    }
+  )
   addNumberedSteps(slide, ['Board decision', 'Commercial negotiation', 'Contract & mobilise', 'Initiate'], { y: 3.2, h: 1.7 })
 }

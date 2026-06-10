@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorMessage } from '@/components/common/error-message'
 import { GoLiveManager } from '@/components/timeline/go-live-manager'
-import { useRollouts, useEstimationMutations } from '@/hooks/use-estimation'
+import { useRollouts, useEstimationMutations, useTimelineConfig } from '@/hooks/use-estimation'
 import { useProposalData } from '@/hooks/use-proposal-data'
 import { SectionPreview } from '@/components/preview/section-preview'
 import { PreviewPanel } from '@/components/preview/preview-panel'
@@ -18,6 +18,7 @@ const RoadmapBuilder = dynamic(
 
 export function TimelineTab({ opportunityId }: { opportunityId: string }) {
   const { data: rollouts, isLoading, error } = useRollouts(opportunityId)
+  const { data: timelineConfig } = useTimelineConfig(opportunityId)
   const mutations = useEstimationMutations(opportunityId)
   const { data: proposalData } = useProposalData(opportunityId)
 
@@ -34,6 +35,19 @@ export function TimelineTab({ opportunityId }: { opportunityId: string }) {
           <RoadmapBuilder
             rollouts={rollouts ?? []}
             onUpdatePhase={(input) => mutations.updatePhase.mutateAsync(input)}
+            onDeletePhase={(phaseId) => mutations.deletePhase.mutateAsync(phaseId)}
+            groups={timelineConfig?.groups ?? []}
+            onSaveGroups={(groups) =>
+              mutations.saveTimelineConfig.mutateAsync({ ...timelineConfig, groups })
+            }
+            background={timelineConfig?.background}
+            onUpdateBackground={(background) =>
+              mutations.saveTimelineConfig.mutateAsync({ ...timelineConfig, background })
+            }
+            goLiveOffsets={timelineConfig?.goLiveOffsets ?? {}}
+            onSaveGoLiveOffsets={(goLiveOffsets) =>
+              mutations.saveTimelineConfig.mutateAsync({ ...timelineConfig, goLiveOffsets })
+            }
           />
         </CardContent>
       </Card>

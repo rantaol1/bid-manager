@@ -8,6 +8,8 @@ const ITEMS = [
   { href: '/settings/rate-card', label: 'Rate card' },
   { href: '/settings/proposal-defaults', label: 'Proposal defaults' },
   { href: '/settings/templates', label: 'Templates' },
+  { href: '/settings/templates/decks', label: 'Slide decks' },
+  { href: '/settings/templates/pptx', label: 'PowerPoint templates' },
   { href: '/settings/branding', label: 'Branding' },
 ]
 

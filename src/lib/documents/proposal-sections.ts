@@ -107,3 +107,10 @@ export const BOARD_SECTIONS: ProposalSection[] = [
 export function getSections(type: DeliverableType): ProposalSection[] {
   return type === 'board_summary' ? BOARD_SECTIONS : FULL_SECTIONS
 }
+
+/** The default { sectionId: on } map for a deck kind, from each section's `defaultOn`. */
+export function defaultSectionSelection(type: DeliverableType): Record<string, boolean> {
+  const sel: Record<string, boolean> = {}
+  for (const s of getSections(type)) sel[s.id] = s.defaultOn
+  return sel
+}

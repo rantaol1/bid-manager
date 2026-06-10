@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorMessage } from '@/components/common/error-message'
 import { StringListEditor } from '@/components/common/string-list-editor'
-import { ModulePicker } from '@/components/scope/module-picker'
+import { SolutionMap } from '@/components/scope/solution-map'
 import { FitGapSummary } from '@/components/scope/fit-gap-summary'
 import { RequirementsTable } from '@/components/scope/requirements-table'
 import { RiskRegister } from '@/components/scope/risk-register'
@@ -16,7 +16,7 @@ import { useScope, useSaveScope, type ScopeData } from '@/hooks/use-scope'
 import { useProposalData } from '@/hooks/use-proposal-data'
 import { SectionPreview } from '@/components/preview/section-preview'
 import { PreviewPanel } from '@/components/preview/preview-panel'
-import { IFS_MODULES } from '@/lib/constants/ifs-modules'
+import { IFS_MODULES, SCOPE_PHASES_DEFAULT } from '@/lib/constants/ifs-modules'
 
 const SCOPE_SLIDES: Array<{ id: string; label: string }> = [
   { id: 'solution_overview', label: 'Solution overview' },
@@ -27,7 +27,15 @@ const SCOPE_SLIDES: Array<{ id: string; label: string }> = [
   { id: 'risk', label: 'Risk management' },
 ]
 
-const EMPTY: ScopeData = { modules: {}, requirements: [], assumptions: [], exclusions: [], risks: [] }
+const EMPTY: ScopeData = {
+  modules: {},
+  phases: SCOPE_PHASES_DEFAULT,
+  requirements: [],
+  assumptions: [],
+  exclusions: [],
+  deferred: [],
+  risks: [],
+}
 
 export function ScopeTab({ opportunityId }: { opportunityId: string }) {
   const { data, isLoading, error } = useScope(opportunityId)
@@ -59,10 +67,12 @@ export function ScopeTab({ opportunityId }: { opportunityId: string }) {
         ...proposalData,
         scope: {
           modules: draft.modules,
+          phases: draft.phases,
           selectedModuleNames: IFS_MODULES.filter((m) => draft.modules[m.id]?.selected).map((m) => m.name),
           requirements: draft.requirements,
           assumptions: draft.assumptions,
           exclusions: draft.exclusions,
+          deferred: draft.deferred,
           risks: draft.risks,
         },
       }
@@ -81,10 +91,15 @@ export function ScopeTab({ opportunityId }: { opportunityId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>IFS modules in scope</CardTitle>
+          <CardTitle>Solution set &amp; phasing</CardTitle>
         </CardHeader>
         <CardContent>
-          <ModulePicker modules={draft.modules} onChange={(modules) => setDraft((d) => ({ ...d, modules }))} />
+          <SolutionMap
+            modules={draft.modules}
+            phases={draft.phases}
+            onChangeModules={(modules) => setDraft((d) => ({ ...d, modules }))}
+            onChangePhases={(phases) => setDraft((d) => ({ ...d, phases }))}
+          />
         </CardContent>
       </Card>
 
@@ -119,6 +134,18 @@ export function ScopeTab({ opportunityId }: { opportunityId: string }) {
               items={draft.exclusions}
               onChange={(exclusions) => setDraft((d) => ({ ...d, exclusions }))}
               placeholder="Add an exclusion…"
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Deferred to a later phase</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StringListEditor
+              items={draft.deferred}
+              onChange={(deferred) => setDraft((d) => ({ ...d, deferred }))}
+              placeholder="Add a deferred item…"
             />
           </CardContent>
         </Card>

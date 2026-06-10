@@ -9,8 +9,19 @@ export const scopeSchema = z.object({
       selected: z.boolean(),
       fitGap: fitGap.optional(),
       notes: z.string().max(1000).optional(),
+      phaseId: z.string().max(60).optional(),
     })
   ),
+  phases: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(60),
+        label: z.string().min(1).max(120).trim(),
+        colour: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+      })
+    )
+    .max(20)
+    .default([]),
   requirements: z
     .array(
       z.object({
@@ -25,6 +36,7 @@ export const scopeSchema = z.object({
     .max(500),
   assumptions: z.array(z.string().max(1000)).max(100),
   exclusions: z.array(z.string().max(1000)).max(100),
+  deferred: z.array(z.string().max(1000)).max(100).default([]),
   risks: z
     .array(
       z.object({

@@ -11,6 +11,9 @@ import {
   addCards,
   addPlaceholder,
 } from '../shared/branding'
+import { addSolutionTowerSlide } from '../shared/solution-tower'
+import { richTextToPptxRuns } from '@/lib/documents/rich-text-pptx'
+import { richTextIsEmpty } from '@/lib/rich-text'
 
 const MODULE_BY_ID = new Map<string, (typeof IFS_MODULES)[number]>(IFS_MODULES.map((m) => [m.id, m]))
 const FITGAP_LABEL: Record<string, string> = { fit: 'Fit', partial: 'Partial', gap: 'Gap' }
@@ -42,17 +45,23 @@ export function executiveSummarySlide(pptx: pptxgen, data: ProposalData, n: numb
 
 export function understandingSlide(pptx: pptxgen, data: ProposalData, n: number) {
   const slide = contentSlide(pptx, { label: 'Understanding', title: 'Our understanding', slideNumber: n })
-  const text = data.narrative.understanding?.trim() || '[Add a narrative about the customer’s business, challenges and objectives.]'
-  slide.addText(text, {
-    x: SLIDE.margin,
-    y: 1.4,
-    w: SLIDE.contentW,
-    h: 2.0,
-    fontFace: BRAND.font,
-    fontSize: 13,
-    color: BRAND.darkGray,
-    valign: 'top',
-  })
+  const empty = richTextIsEmpty(data.narrative.understanding)
+  slide.addText(
+    empty
+      ? '[Add a narrative about the customer’s business, challenges and objectives.]'
+      : richTextToPptxRuns(data.narrative.understanding, { fontSize: 13 }),
+    {
+      x: SLIDE.margin,
+      y: 1.4,
+      w: SLIDE.contentW,
+      h: 2.0,
+      fontFace: BRAND.font,
+      fontSize: 13,
+      italic: empty,
+      color: BRAND.darkGray,
+      valign: 'top',
+    }
+  )
   addCards(
     slide,
     [
@@ -80,24 +89,13 @@ export function valueDriversSlide(pptx: pptxgen, data: ProposalData, n: number) 
 }
 
 export function solutionOverviewSlide(pptx: pptxgen, data: ProposalData, n: number) {
-  const slide = contentSlide(pptx, { label: 'Solution', title: 'Solution overview & target architecture', slideNumber: n })
-  const mods = selectedModules(data)
-  if (mods.length === 0) {
-    addPlaceholder(slide, 'Select modules in the Scope tab to populate the solution architecture.')
+  if (selectedModules(data).length === 0) {
+    const slide = contentSlide(pptx, { label: 'Solution', title: 'Solution set overview & phasing', slideNumber: n })
+    addPlaceholder(slide, 'Assign modules to phases in the Scope tab to populate the solution set overview.')
     return
   }
-  const byCategory = new Map<string, string[]>()
-  for (const m of mods) {
-    const list = byCategory.get(m.category) ?? []
-    list.push(m.name)
-    byCategory.set(m.category, list)
-  }
-  brandedTable(
-    slide,
-    ['Layer', 'IFS Cloud modules'],
-    [...byCategory.entries()].map(([cat, names]) => [cat, names.join(', ')]),
-    { y: 1.4, colW: [2.2, 6.8], fontSize: 12 }
-  )
+  // Full-bleed tower slide (the legend acts as the header).
+  addSolutionTowerSlide(pptx, data.scope)
 }
 
 export function scopeInSlide(pptx: pptxgen, data: ProposalData, n: number) {
@@ -117,7 +115,7 @@ export function scopeInSlide(pptx: pptxgen, data: ProposalData, n: number) {
 
 export function scopeOutSlide(pptx: pptxgen, data: ProposalData, n: number) {
   const slide = contentSlide(pptx, { label: 'Scope', title: 'Out of scope & deferred', slideNumber: n })
-  const deferred = data.scope.requirements.filter((r) => r.priority === 'wont').map((r) => r.title)
+  const deferred = data.scope.deferred
   slide.addText('Explicitly out of scope', { x: SLIDE.margin, y: 1.35, w: 4.3, h: 0.3, fontFace: BRAND.font, fontSize: 13, bold: true, color: BRAND.black })
   slide.addText('Deferred to a later phase', { x: SLIDE.margin + 4.7, y: 1.35, w: 4.3, h: 0.3, fontFace: BRAND.font, fontSize: 13, bold: true, color: BRAND.black })
   addBullets(slide, data.scope.exclusions.length ? data.scope.exclusions : ['None recorded'], { x: SLIDE.margin, y: 1.75, w: 4.3, h: 3.2, fontSize: 11 })
