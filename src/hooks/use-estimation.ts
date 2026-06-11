@@ -9,6 +9,7 @@ export interface RoleConfigDTO {
   opportunityId: string
   roleName: string
   rate: string
+  costRate: string
   rateUnit: string
   hoursPerDay: number
   sortOrder: number
@@ -71,6 +72,7 @@ interface RoleInput {
   id?: string
   roleName: string
   rate: number
+  costRate: number
   rateUnit?: string
   hoursPerDay?: number
   sortOrder?: number

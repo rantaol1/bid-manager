@@ -60,25 +60,109 @@ export interface PhaseCalc {
   rolloutName: string
   workingDays: number
   totalDays: number
+  /** Fees: bill rate × days. */
   totalCost: number
+  /** Internal delivery cost: cost rate × days. */
+  totalInternalCost: number
 }
 
 export interface RoleCalc {
   roleConfigId: string
   roleName: string
+  /** Bill (charge-out) rate per day. */
   rate: number
+  /** Internal cost rate per day. */
+  costRate: number
   totalDays: number
+  /** Fees: bill rate × days. */
   totalCost: number
+  /** Internal delivery cost: cost rate × days. */
+  totalInternalCost: number
 }
 
 export interface EstimationSummary {
   phases: PhaseCalc[]
   roles: RoleCalc[]
   projectTotalDays: number
+  /** Total fees (bill-rate revenue): Σ bill rate × days. */
   projectTotalCost: number
+  /** Total internal delivery cost: Σ cost rate × days. */
+  projectInternalCost: number
+  /** Gross margin in currency: projectTotalCost − projectInternalCost. */
+  projectMargin: number
+  /** Gross margin as a fraction of fees (0..1); 0 when there are no fees. */
+  projectMarginPct: number
   averageUtilisation: number
   durationMonths: number
   currency: string
+}
+
+/* ---------- Project performance analysis (lib/analysis.ts) ---------- */
+
+/** One month of the staffing/resource histogram. */
+export interface StaffingBucket {
+  /** Calendar month, 'YYYY-MM'. */
+  month: string
+  /** Person-days of effort landing in this month (across overlapping phases). */
+  personDays: number
+  /** Average concurrent headcount this month = personDays ÷ working days in month. */
+  fte: number
+}
+
+/** A slice of the cost (fees) mix, by role or by workstream. */
+export interface MixSlice {
+  id: string
+  name: string
+  /** Fees attributable to this slice. */
+  cost: number
+  days: number
+  /** Share of total fees (0..1); 0 when total fees is 0. */
+  share: number
+  /** Display colour (rollouts carry their own; roles are assigned from a palette). */
+  colour?: string
+}
+
+/** Derived project-performance KPIs for the Analysis tab. Built on EstimationSummary. */
+export interface AnalysisSummary {
+  currency: string
+
+  // Commercial — margin is intrinsic to the rate card (fees − delivery cost).
+  fees: number
+  deliveryCost: number
+  grossMargin: number
+  /** Gross margin as a fraction of fees (0..1); 0 when there are no fees. */
+  grossMarginPct: number
+  blendedBillRate: number
+  blendedCostRate: number
+  /** Negotiated deal value (expectedValue); null when unset. */
+  dealValue: number | null
+  probability: number | null
+  /** dealValue × probability/100; null if either input is null. */
+  weightedValue: number | null
+  /** (dealValue − fees) / fees; null when dealValue unset or fees is 0. */
+  dealVsFeesVariance: number | null
+
+  // Effort / resourcing
+  totalDays: number
+  /** Average concurrent headcount across the project span. */
+  averageTeamFte: number
+  /** Highest monthly FTE from the staffing histogram. */
+  peakFte: number
+  averageUtilisation: number
+  roleCount: number
+  costMixByRole: MixSlice[]
+  costMixByRollout: MixSlice[]
+
+  // Schedule (derived from phase dates, not the sales close date)
+  durationMonths: number
+  projectStart: string | null
+  projectEnd: string | null
+  projectWorkingDays: number
+  phaseCount: number
+  goLiveCount: number
+
+  // Staffing profile over time
+  staffing: StaffingBucket[]
 }
 
 /* ---------- Proposal content (ProposalContent / ProposalDefaults models) ---------- */

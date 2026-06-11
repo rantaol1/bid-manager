@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { OverviewTab } from '@/components/opportunity/overview-tab'
 import { ScopeTab } from '@/components/opportunity/scope-tab'
 import { EstimationTab } from '@/components/opportunity/estimation-tab'
+import { AnalysisTab } from '@/components/opportunity/analysis-tab'
 import { TimelineTab } from '@/components/opportunity/timeline-tab'
 import { ProposalContentTab } from '@/components/opportunity/proposal-content-tab'
 import { DeliverablesTab } from '@/components/opportunity/deliverables-tab'
@@ -13,6 +14,7 @@ const TAB_DEFS = [
   { value: 'overview', label: 'Overview' },
   { value: 'scope', label: 'Scope' },
   { value: 'estimation', label: 'Estimation' },
+  { value: 'analysis', label: 'Analysis' },
   { value: 'timeline', label: 'Timeline' },
   { value: 'proposal', label: 'Proposal' },
   { value: 'deliverables', label: 'Deliverables' },
@@ -39,7 +41,19 @@ export function WorkspaceTabs({ initialOpportunity }: { initialOpportunity: Oppo
         <ScopeTab opportunityId={opportunity.id} />
       </TabsContent>
       <TabsContent value="estimation">
-        <EstimationTab opportunityId={opportunity.id} currency={opportunity.currency} />
+        <EstimationTab
+          opportunityId={opportunity.id}
+          currency={opportunity.currency}
+          expectedValue={opportunity.expectedValue}
+        />
+      </TabsContent>
+      <TabsContent value="analysis">
+        <AnalysisTab
+          opportunityId={opportunity.id}
+          currency={opportunity.currency}
+          expectedValue={opportunity.expectedValue}
+          probability={opportunity.probability}
+        />
       </TabsContent>
       <TabsContent value="timeline">
         <TimelineTab opportunityId={opportunity.id} />

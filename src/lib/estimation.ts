@@ -5,7 +5,10 @@ import type { EstimationSummary, PhaseCalc, RoleCalc } from '@/types'
 export interface EstRoleConfig {
   id: string
   roleName: string
+  /** Bill (charge-out) rate per day. */
   rate: number
+  /** Internal cost rate per day. */
+  costRate: number
   rateUnit: string
   hoursPerDay: number
   sortOrder: number
@@ -54,10 +57,11 @@ export function daysForAllocation(percentage: number, workingDays: number): numb
  */
 export function computeEstimation({ roleConfigs, rollouts, currency }: EstimationInput): EstimationSummary {
   const rateById = new Map(roleConfigs.map((r) => [r.id, r.rate]))
+  const costRateById = new Map(roleConfigs.map((r) => [r.id, r.costRate]))
   const nameById = new Map(roleConfigs.map((r) => [r.id, r.roleName]))
 
   const phases: PhaseCalc[] = []
-  const roleTotals = new Map<string, { days: number; cost: number }>()
+  const roleTotals = new Map<string, { days: number; cost: number; internalCost: number }>()
   const utilisationValues: number[] = []
 
   let minStart: Date | null = null
@@ -67,6 +71,7 @@ export function computeEstimation({ roleConfigs, rollouts, currency }: Estimatio
     for (const phase of rollout.phases) {
       let phaseDays = 0
       let phaseCost = 0
+      let phaseInternalCost = 0
 
       const start = new Date(phase.startDate)
       const end = new Date(phase.endDate)
@@ -81,15 +86,19 @@ export function computeEstimation({ roleConfigs, rollouts, currency }: Estimatio
         const pct = Number(alloc.percentage)
         if (pct <= 0) continue
         const rate = rateById.get(alloc.roleConfigId) ?? 0
+        const costRate = costRateById.get(alloc.roleConfigId) ?? 0
         const days = daysForAllocation(pct, phase.workingDays)
         const cost = days * rate
+        const internalCost = days * costRate
         phaseDays += days
         phaseCost += cost
+        phaseInternalCost += internalCost
         utilisationValues.push(pct)
 
-        const existing = roleTotals.get(alloc.roleConfigId) ?? { days: 0, cost: 0 }
+        const existing = roleTotals.get(alloc.roleConfigId) ?? { days: 0, cost: 0, internalCost: 0 }
         existing.days += days
         existing.cost += cost
+        existing.internalCost += internalCost
         roleTotals.set(alloc.roleConfigId, existing)
       }
 
@@ -101,23 +110,29 @@ export function computeEstimation({ roleConfigs, rollouts, currency }: Estimatio
         workingDays: phase.workingDays,
         totalDays: phaseDays,
         totalCost: phaseCost,
+        totalInternalCost: phaseInternalCost,
       })
     }
   }
 
   const roles: RoleCalc[] = roleConfigs.map((rc) => {
-    const totals = roleTotals.get(rc.id) ?? { days: 0, cost: 0 }
+    const totals = roleTotals.get(rc.id) ?? { days: 0, cost: 0, internalCost: 0 }
     return {
       roleConfigId: rc.id,
       roleName: nameById.get(rc.id) ?? rc.roleName,
       rate: rc.rate,
+      costRate: rc.costRate,
       totalDays: totals.days,
       totalCost: totals.cost,
+      totalInternalCost: totals.internalCost,
     }
   })
 
   const projectTotalDays = phases.reduce((s, p) => s + p.totalDays, 0)
   const projectTotalCost = phases.reduce((s, p) => s + p.totalCost, 0)
+  const projectInternalCost = phases.reduce((s, p) => s + p.totalInternalCost, 0)
+  const projectMargin = projectTotalCost - projectInternalCost
+  const projectMarginPct = projectTotalCost > 0 ? projectMargin / projectTotalCost : 0
   const averageUtilisation =
     utilisationValues.length > 0
       ? utilisationValues.reduce((s, v) => s + v, 0) / utilisationValues.length
@@ -130,6 +145,9 @@ export function computeEstimation({ roleConfigs, rollouts, currency }: Estimatio
     roles,
     projectTotalDays,
     projectTotalCost,
+    projectInternalCost,
+    projectMargin,
+    projectMarginPct,
     averageUtilisation,
     durationMonths,
     currency,

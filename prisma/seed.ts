@@ -13,17 +13,17 @@ function workingDays(start: Date, end: Date): number {
   return eachDayOfInterval({ start, end }).filter((d) => !isWeekend(d)).length
 }
 
-const DEFAULT_ROLES: Array<{ roleName: string; rate: number; sortOrder: number }> = [
-  { roleName: 'Project Manager', rate: 1500, sortOrder: 0 },
-  { roleName: 'Solution Architect', rate: 1600, sortOrder: 1 },
-  { roleName: 'Functional Consultant - ERP', rate: 1300, sortOrder: 2 },
-  { roleName: 'Functional Consultant - EAM', rate: 1300, sortOrder: 3 },
-  { roleName: 'Functional Consultant - FSM', rate: 1300, sortOrder: 4 },
-  { roleName: 'Technical Consultant', rate: 1200, sortOrder: 5 },
-  { roleName: 'Data Migration Specialist', rate: 1200, sortOrder: 6 },
-  { roleName: 'Integration Specialist', rate: 1300, sortOrder: 7 },
-  { roleName: 'Test Manager', rate: 1200, sortOrder: 8 },
-  { roleName: 'Change Management Lead', rate: 1100, sortOrder: 9 },
+const DEFAULT_ROLES: Array<{ roleName: string; rate: number; costRate: number; sortOrder: number }> = [
+  { roleName: 'Project Manager', rate: 1500, costRate: 900, sortOrder: 0 },
+  { roleName: 'Solution Architect', rate: 1600, costRate: 950, sortOrder: 1 },
+  { roleName: 'Functional Consultant - ERP', rate: 1300, costRate: 780, sortOrder: 2 },
+  { roleName: 'Functional Consultant - EAM', rate: 1300, costRate: 780, sortOrder: 3 },
+  { roleName: 'Functional Consultant - FSM', rate: 1300, costRate: 780, sortOrder: 4 },
+  { roleName: 'Technical Consultant', rate: 1200, costRate: 720, sortOrder: 5 },
+  { roleName: 'Data Migration Specialist', rate: 1200, costRate: 720, sortOrder: 6 },
+  { roleName: 'Integration Specialist', rate: 1300, costRate: 780, sortOrder: 7 },
+  { roleName: 'Test Manager', rate: 1200, costRate: 720, sortOrder: 8 },
+  { roleName: 'Change Management Lead', rate: 1100, costRate: 660, sortOrder: 9 },
 ]
 
 /** Idempotently create a workspace-default deck template with a Version 1 that
@@ -62,8 +62,19 @@ async function main() {
   for (const r of DEFAULT_ROLES) {
     await prisma.defaultRoleConfig.upsert({
       where: { roleName: r.roleName },
-      update: { rate: new Prisma.Decimal(r.rate), sortOrder: r.sortOrder, rateUnit: 'day', hoursPerDay: 8 },
-      create: { roleName: r.roleName, rate: new Prisma.Decimal(r.rate), sortOrder: r.sortOrder },
+      update: {
+        rate: new Prisma.Decimal(r.rate),
+        costRate: new Prisma.Decimal(r.costRate),
+        sortOrder: r.sortOrder,
+        rateUnit: 'day',
+        hoursPerDay: 8,
+      },
+      create: {
+        roleName: r.roleName,
+        rate: new Prisma.Decimal(r.rate),
+        costRate: new Prisma.Decimal(r.costRate),
+        sortOrder: r.sortOrder,
+      },
     })
   }
 
@@ -123,6 +134,7 @@ async function main() {
         opportunityId: OPPORTUNITY_ID,
         roleName: r.roleName,
         rate: new Prisma.Decimal(r.rate),
+        costRate: new Prisma.Decimal(r.costRate),
         rateUnit: 'day',
         hoursPerDay: 8,
         sortOrder: r.sortOrder,

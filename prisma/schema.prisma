@@ -84,6 +84,7 @@ model RoleConfig {
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   roleName      String
   rate          Decimal     @db.Decimal(10, 2)
+  costRate      Decimal     @db.Decimal(10, 2) @default(0)
   rateUnit      String      @default("day")
   hoursPerDay   Int         @default(8)
   sortOrder     Int         @default(0)
@@ -181,6 +182,7 @@ model DefaultRoleConfig {
   id          String  @id @default(cuid())
   roleName    String  @unique
   rate        Decimal @db.Decimal(10, 2)
+  costRate    Decimal @db.Decimal(10, 2) @default(0)
   rateUnit    String  @default("day")
   hoursPerDay Int     @default(8)
   sortOrder   Int     @default(0)

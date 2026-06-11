@@ -43,6 +43,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
             data: {
               roleName: role.roleName,
               rate: role.rate,
+              costRate: role.costRate,
               rateUnit: role.rateUnit,
               hoursPerDay: role.hoursPerDay,
               sortOrder: role.sortOrder,
@@ -54,6 +55,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
               opportunityId: id,
               roleName: role.roleName,
               rate: role.rate,
+              costRate: role.costRate,
               rateUnit: role.rateUnit,
               hoursPerDay: role.hoursPerDay,
               sortOrder: role.sortOrder,

@@ -7,6 +7,7 @@ export const saveRolesSchema = z.object({
         id: z.string().optional(),
         roleName: z.string().min(1).max(120).trim(),
         rate: z.coerce.number().min(0).max(100000),
+        costRate: z.coerce.number().min(0).max(100000).default(0),
         rateUnit: z.enum(['day', 'hour']).default('day'),
         hoursPerDay: z.coerce.number().int().min(1).max(24).default(8),
         sortOrder: z.coerce.number().int().min(0).default(0),

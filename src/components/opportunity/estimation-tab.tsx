@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorMessage } from '@/components/common/error-message'
 import { CostSummaryCards } from '@/components/estimation/cost-summary-cards'
+import { MonitoringCards } from '@/components/estimation/monitoring-cards'
 import { RoleConfigPanel } from '@/components/estimation/role-config-panel'
 import { PhaseBuilder } from '@/components/estimation/phase-builder'
 import { AllocationMatrix, allocKey } from '@/components/estimation/allocation-matrix'
@@ -23,7 +24,15 @@ const ESTIMATION_SLIDES: Array<{ id: string; label: string }> = [
   { id: 'commercials', label: 'Indicative investment' },
 ]
 
-export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunityId: string; currency?: string }) {
+export function EstimationTab({
+  opportunityId,
+  currency = 'EUR',
+  expectedValue,
+}: {
+  opportunityId: string
+  currency?: string
+  expectedValue: string | null
+}) {
   const rolesQuery = useRoles(opportunityId)
   const rolloutsQuery = useRollouts(opportunityId)
   const mutations = useEstimationMutations(opportunityId)
@@ -76,6 +85,7 @@ export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunity
         id: r.id,
         roleName: r.roleName,
         rate: Number(r.rate),
+        costRate: Number(r.costRate),
         rateUnit: r.rateUnit,
         hoursPerDay: r.hoursPerDay,
         sortOrder: r.sortOrder,
@@ -125,6 +135,8 @@ export function EstimationTab({ opportunityId, currency = 'EUR' }: { opportunity
           Export XLSX
         </Button>
       </div>
+
+      <MonitoringCards summary={summary} expectedValue={expectedValue ? Number(expectedValue) : null} />
 
       <CostSummaryCards summary={summary} />
 

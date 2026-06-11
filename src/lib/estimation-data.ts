@@ -45,6 +45,7 @@ export async function loadEstimation(opportunityId: string): Promise<LoadedEstim
     id: r.id,
     roleName: r.roleName,
     rate: Number(r.rate),
+    costRate: Number(r.costRate),
     rateUnit: r.rateUnit,
     hoursPerDay: r.hoursPerDay,
     sortOrder: r.sortOrder,

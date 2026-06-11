@@ -20,18 +20,28 @@ interface EditableRole {
   id?: string
   roleName: string
   rate: string
+  costRate: string
   sortOrder: number
 }
 
 interface Props {
   roles: RoleConfigDTO[]
   saving: boolean
-  onSave: (roles: { id?: string; roleName: string; rate: number; sortOrder: number }[]) => Promise<void>
+  onSave: (
+    roles: { id?: string; roleName: string; rate: number; costRate: number; sortOrder: number }[]
+  ) => Promise<void>
 }
 
 export function RoleConfigPanel({ roles, saving, onSave }: Props) {
   const toRows = (source: RoleConfigDTO[]): EditableRole[] =>
-    source.map((r) => ({ id: r.id, roleName: r.roleName, rate: r.rate, sortOrder: r.sortOrder }))
+    source.map((r) => ({
+      id: r.id,
+      roleName: r.roleName,
+      // Coerce to a string so the inputs stay controlled even if the API omits a field.
+      rate: r.rate ?? '',
+      costRate: r.costRate ?? '',
+      sortOrder: r.sortOrder,
+    }))
 
   // Reset the editable rows when the server roles change (render-phase reset).
   const [prevRoles, setPrevRoles] = useState(roles)
@@ -46,7 +56,7 @@ export function RoleConfigPanel({ roles, saving, onSave }: Props) {
   }
 
   function addRow() {
-    setRows((prev) => [...prev, { roleName: '', rate: '1000', sortOrder: prev.length }])
+    setRows((prev) => [...prev, { roleName: '', rate: '1000', costRate: '600', sortOrder: prev.length }])
   }
 
   function removeRow(index: number) {
@@ -56,7 +66,13 @@ export function RoleConfigPanel({ roles, saving, onSave }: Props) {
   async function handleSave() {
     const cleaned = rows
       .filter((r) => r.roleName.trim())
-      .map((r, i) => ({ id: r.id, roleName: r.roleName.trim(), rate: Number(r.rate) || 0, sortOrder: i }))
+      .map((r, i) => ({
+        id: r.id,
+        roleName: r.roleName.trim(),
+        rate: Number(r.rate) || 0,
+        costRate: Number(r.costRate) || 0,
+        sortOrder: i,
+      }))
     try {
       await onSave(cleaned)
       toast.success('Roles saved')
@@ -85,7 +101,8 @@ export function RoleConfigPanel({ roles, saving, onSave }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead>Role</TableHead>
-              <TableHead className="w-40">Rate (per day)</TableHead>
+              <TableHead className="w-32">Bill rate (/day)</TableHead>
+              <TableHead className="w-32">Cost rate (/day)</TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
@@ -101,6 +118,14 @@ export function RoleConfigPanel({ roles, saving, onSave }: Props) {
                     min={0}
                     value={row.rate}
                     onChange={(e) => update(i, 'rate', e.target.value)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={row.costRate}
+                    onChange={(e) => update(i, 'costRate', e.target.value)}
                   />
                 </TableCell>
                 <TableCell>
