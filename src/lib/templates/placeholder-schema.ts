@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
 import { formatRaciCell } from '@/lib/raci'
+import { applyGovTokens } from '@/lib/governance'
 import { IFS_MODULES } from '@/lib/constants/ifs-modules'
 import type { ProposalData } from '@/lib/documents/proposal-data'
 
@@ -47,9 +48,7 @@ export const PLACEHOLDER_REFERENCE: Array<{ tag: string; description: string }> 
   { tag: '{#valueDrivers}{driver} · {ifsCapability} · {targetOutcome}{/valueDrivers}', description: 'Business drivers → outcomes (table)' },
   { tag: '{#methodologyPhases}{phase} · {focus} · {deliverables}{/methodologyPhases}', description: 'Methodology phases (table)' },
   { tag: '{#waysOfWorking}{title}: {description}{/waysOfWorking}', description: 'Ways of working (cards)' },
-  { tag: '{governanceSteering}', description: 'Governance — steering committee' },
-  { tag: '{governancePmo}', description: 'Governance — joint PMO' },
-  { tag: '{#governanceWorkstreams}{name}{/governanceWorkstreams}', description: 'Governance workstreams' },
+  { tag: '{#governanceBodies}{name} ({cadence}) · {participants} · {responsibilities}{/governanceBodies}', description: 'Governance bodies (table)' },
   { tag: '{#customerCommitments}{title}: {description}{/customerCommitments}', description: 'Customer commitments' },
   { tag: '{#dataMigrationSteps}{step}{/dataMigrationSteps}', description: 'Data migration steps' },
   { tag: '{#integrationSteps}{step}{/integrationSteps}', description: 'Integration steps' },
@@ -84,6 +83,7 @@ export function buildTemplateData(data: ProposalData, companyName: string) {
     fte: (r.totalDays / wd).toFixed(1),
   }))
   const stepRows = (arr: string[]) => arr.map((step) => ({ step }))
+  const govTok = (s: string) => applyGovTokens(s, { customer: meta.customerName, partner: companyName })
 
   return {
     customerName: meta.customerName,
@@ -140,9 +140,12 @@ export function buildTemplateData(data: ProposalData, companyName: string) {
     // Structured collections
     methodologyPhases: content.methodologyPhases.map((p) => ({ phase: p.phase, focus: p.focus, deliverables: p.deliverables })),
     waysOfWorking: content.waysOfWorking.map((w) => ({ title: w.title, description: w.description })),
-    governanceSteering: content.governance.steering,
-    governancePmo: content.governance.pmo,
-    governanceWorkstreams: content.governance.workstreams.map((name) => ({ name })),
+    governanceBodies: content.governance.bodies.map((b) => ({
+      name: b.name,
+      cadence: b.cadence,
+      participants: [...b.customerParticipants, ...b.partnerParticipants].map((p) => govTok(p)).join('; '),
+      responsibilities: b.responsibilities.map((r) => govTok(r)).join('; '),
+    })),
     customerCommitments: content.customerCommitments.map((c) => ({ title: c.title, description: c.description })),
     dataMigrationSteps: stepRows(content.dataMigrationSteps),
     integrationSteps: stepRows(content.integrationSteps),

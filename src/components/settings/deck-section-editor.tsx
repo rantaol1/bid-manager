@@ -14,8 +14,11 @@ import {
   TitledItemsEditor,
   StringListEditor,
   GovernanceEditor,
+  TeamStructureEditor,
 } from '@/components/deliverables/proposal-editors'
 import { normalizeRaci } from '@/lib/raci'
+import { normalizeGovernance } from '@/lib/governance'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 import type { EditorKey } from '@/lib/documents/proposal-sections'
 import type { DeckVersionContentInput } from '@/lib/schemas/deck-template'
 import type { ProposalContentInput } from '@/lib/schemas/proposal'
@@ -30,6 +33,7 @@ const STRUCTURED_KEYS: Partial<Record<EditorKey, keyof ProposalStructuredContent
   methodologyPhases: 'methodologyPhases',
   waysOfWorking: 'waysOfWorking',
   governance: 'governance',
+  teamStructure: 'teamStructure',
   customerCommitments: 'customerCommitments',
   dataMigrationSteps: 'dataMigrationSteps',
   integrationSteps: 'integrationSteps',
@@ -120,7 +124,9 @@ export function DeckSectionEditor({
     case 'whyArcwide':
       return <TitledItemsEditor value={draft.whyArcwide} onChange={set} max={6} />
     case 'governance':
-      return <GovernanceEditor value={draft.governance} onChange={set} />
+      return <GovernanceEditor value={normalizeGovernance(draft.governance)} onChange={set} />
+    case 'teamStructure':
+      return <TeamStructureEditor value={normalizeTeamStructure(draft.teamStructure)} onChange={set} />
     case 'dataMigrationSteps':
       return <StringListEditor value={draft.dataMigrationSteps} onChange={set} max={8} />
     case 'integrationSteps':

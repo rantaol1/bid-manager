@@ -37,7 +37,7 @@ const SECTION_TOKENS: Array<{ section: string; tokens: string }> = [
   { section: 'Methodology', tokens: '{#methodologyPhases}{phase}{focus}{deliverables}{/methodologyPhases} — table' },
   { section: 'Ways of working', tokens: '{#waysOfWorking}{title}{description}{/waysOfWorking}' },
   { section: 'Project plan (phasing)', tokens: '{#phases}{phaseName}{rolloutName}{workingDays}{totalDays}{totalCost}{/phases} — table' },
-  { section: 'Governance', tokens: '{governanceSteering} · {governancePmo} · {#governanceWorkstreams}{name}{/governanceWorkstreams}' },
+  { section: 'Governance', tokens: '{#governanceBodies}{name}{cadence}{participants}{responsibilities}{/governanceBodies}' },
   { section: 'Delivery team', tokens: '{#team}{roleName}{totalDays}{totalCost}{fte}{/team} — table' },
   { section: 'RACI', tokens: '{#raci}{activity}{cells}{/raci} — table (cells = combined assignments)' },
   { section: 'CRIMs', tokens: '{#crims}{type}{name}{description}{complexity}{/crims} — table' },

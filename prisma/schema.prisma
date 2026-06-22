@@ -42,6 +42,7 @@ model Opportunity {
   deliverables   Deliverable[]
   activities     Activity[]
   proposalContent ProposalContent?
+  estimationRevisions EstimationRevision[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   createdBy      String
@@ -132,6 +133,25 @@ model Allocation {
   @@index([phaseId])
 }
 
+/// A named, self-contained JSON snapshot of an opportunity's estimation working copy
+/// (roles, rollouts, phases, allocations). Restoring overwrites the live tables. Kept
+/// roleName-keyed in `snapshot` so it survives regenerated cuids on restore.
+model EstimationRevision {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  label         String
+  snapshot      Json
+  summary       Json?
+  kind          String      @default("manual")
+  note          String?
+  createdAt     DateTime    @default(now())
+  createdBy     String
+  updatedAt     DateTime    @updatedAt
+
+  @@index([opportunityId])
+}
+
 model Deliverable {
   id             String               @id @default(cuid())
   opportunityId  String
@@ -215,6 +235,7 @@ model ProposalContent {
   methodologyPhases   Json?
   waysOfWorking       Json?
   governance          Json?
+  teamStructure       Json?
   customerCommitments Json?
   dataMigrationSteps  Json?
   integrationSteps    Json?
@@ -274,6 +295,9 @@ model ProposalDefaults {
   methodologyPhases   Json
   waysOfWorking       Json
   governance          Json
+  // Nullable so the column can be added without a destructive migration; the
+  // resolve cascade falls back to the built-in default when absent.
+  teamStructure       Json?
   customerCommitments Json
   dataMigrationSteps  Json
   integrationSteps    Json
@@ -318,6 +342,7 @@ model DeckTemplateVersion {
   methodologyPhases   Json
   waysOfWorking       Json
   governance          Json
+  teamStructure       Json?
   customerCommitments Json
   dataMigrationSteps  Json
   integrationSteps    Json

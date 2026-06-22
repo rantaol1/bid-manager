@@ -18,6 +18,25 @@ export function handleApiError(error: unknown, context: string): NextResponse {
     if (error.message === 'Forbidden') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Sentinel errors from @/lib/ai (kept message-based so this file needn't import the SDK).
+    if (error.message === 'AI_REFUSAL') {
+      return NextResponse.json(
+        { error: 'The AI declined to generate a suggestion for this request.' },
+        { status: 422 }
+      )
+    }
+    if (error.message === 'AI_RATE_LIMIT') {
+      return NextResponse.json(
+        { error: 'The AI service is busy. Please try again in a moment.' },
+        { status: 429 }
+      )
+    }
+    if (error.message === 'AI_UNAVAILABLE') {
+      return NextResponse.json(
+        { error: 'The AI service is unavailable. Please try again.' },
+        { status: 502 }
+      )
+    }
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {

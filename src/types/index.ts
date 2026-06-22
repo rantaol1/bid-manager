@@ -214,10 +214,55 @@ export interface TitledItem {
   description: string
 }
 
+export type GovernanceIcon = 'clipboard' | 'gauge' | 'pin'
+
+export interface GovernanceBody {
+  name: string
+  cadence: string
+  icon: GovernanceIcon
+  /** Customer-side participants, shown above the divider (may contain {customer}). */
+  customerParticipants: string[]
+  /** Partner/Arcwide-side participants, shown below the divider (may contain {partner}). */
+  partnerParticipants: string[]
+  responsibilities: string[]
+}
+
 export interface GovernanceContent {
-  steering: string
-  pmo: string
-  workstreams: string[]
+  bodies: GovernanceBody[]
+}
+
+/** One functional/technical area within a team box, e.g. "Manufacturing" → ["Shop Order", …]. */
+export interface OrgArea {
+  label: string
+  children: string[]
+}
+
+/** A team box under a project manager, e.g. the "Functional Team" or "Technical Team". */
+export interface OrgTeam {
+  title: string
+  /** Optional lead role shown at the top of the box (e.g. "Solution Architect"). */
+  lead?: string
+  areas: OrgArea[]
+  /** When false, the team box is hidden (configurable sides). */
+  enabled: boolean
+}
+
+/** One side of the org chart — a project manager and the teams reporting to them. */
+export interface OrgSide {
+  /** PM box label; may contain {partner} / {customer} tokens. */
+  projectManager: string
+  teams: OrgTeam[]
+}
+
+/** Project-organisation org chart: dual partner (magenta) + customer (purple) sides. */
+export interface TeamStructureContent {
+  steeringLabel: string
+  designAuthorityLabel: string
+  changeManagementLabel: string
+  /** Partner/Arcwide side — rendered magenta. */
+  partner: OrgSide
+  /** Customer side — rendered purple. */
+  customer: OrgSide
 }
 
 export interface ValueDriver {
@@ -252,6 +297,7 @@ export interface ProposalStructuredContent {
   methodologyPhases: MethodologyPhase[]
   waysOfWorking: TitledItem[]
   governance: GovernanceContent
+  teamStructure: TeamStructureContent
   customerCommitments: TitledItem[]
   dataMigrationSteps: string[]
   integrationSteps: string[]

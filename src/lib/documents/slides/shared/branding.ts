@@ -7,6 +7,8 @@ import type pptxgen from 'pptxgenjs'
  */
 export const BRAND = {
   magenta: 'E6007E',
+  /** Customer-side accent for the project-organisation chart (approx the image's purple). */
+  purple: '7A2B8E',
   black: '1A1A1A',
   white: 'FFFFFF',
   darkGray: '333333',

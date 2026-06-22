@@ -20,6 +20,7 @@ export type EditorKey =
   | 'methodologyPhases'
   | 'waysOfWorking'
   | 'governance'
+  | 'teamStructure'
   | 'customerCommitments'
   | 'dataMigrationSteps'
   | 'integrationSteps'
@@ -71,6 +72,7 @@ export const FULL_SECTIONS: ProposalSection[] = [
   { id: 'plan', chapter: CH2, title: 'Indicative project plan', kind: 'content', builder: c2.planSlide, defaultOn: true },
   { id: 'phasing', chapter: CH2, title: 'Release & rollout strategy', kind: 'content', builder: c2.phasingSlide, defaultOn: true },
   { id: 'governance', chapter: CH2, title: 'Project governance', kind: 'content', builder: c2.governanceSlide, editorKey: 'governance', defaultOn: true },
+  { id: 'team_structure', chapter: CH2, title: 'Project organisation', kind: 'content', builder: c2.teamStructureSlide, editorKey: 'teamStructure', defaultOn: true },
   { id: 'team', chapter: CH2, title: 'Proposed delivery team', kind: 'content', builder: c2.teamSlide, defaultOn: true },
   { id: 'raci', chapter: CH2, title: 'RACI matrix', kind: 'content', builder: c2.raciSlide, editorKey: 'raci', defaultOn: true },
   { id: 'crims', chapter: CH2, title: 'CRIMs register', kind: 'content', builder: c2.crimsSlide, editorKey: 'crims', defaultOn: true },

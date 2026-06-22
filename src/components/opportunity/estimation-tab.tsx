@@ -11,6 +11,8 @@ import { MonitoringCards } from '@/components/estimation/monitoring-cards'
 import { RoleConfigPanel } from '@/components/estimation/role-config-panel'
 import { PhaseBuilder } from '@/components/estimation/phase-builder'
 import { AllocationMatrix, allocKey } from '@/components/estimation/allocation-matrix'
+import { RevisionMenu } from '@/components/estimation/revision-menu'
+import { SuggestAllocationsDialog } from '@/components/estimation/suggest-allocations-dialog'
 import { useRoles, useRollouts, useEstimationMutations } from '@/hooks/use-estimation'
 import { useProposalData } from '@/hooks/use-proposal-data'
 import { SectionPreview } from '@/components/preview/section-preview'
@@ -117,6 +119,18 @@ export function EstimationTab({
     }
   }
 
+  // Apply an AI suggestion into the local draft only — no save, no query invalidation, so
+  // the render-phase reset (which fires on rollouts refetch) won't clobber it. The user
+  // reviews the updated matrix and clicks Save allocations to persist.
+  function applySuggestion(allocs: { phaseId: string; roleConfigId: string; percentage: number }[]) {
+    setDraft((prev) => {
+      const next = { ...prev }
+      for (const a of allocs) next[allocKey(a.phaseId, a.roleConfigId)] = String(a.percentage)
+      return next
+    })
+    toast.success('AI suggestion applied — review and Save allocations')
+  }
+
   if (rolesQuery.isLoading || rolloutsQuery.isLoading) {
     return <Skeleton className="h-96 w-full" />
   }
@@ -126,7 +140,17 @@ export function EstimationTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <SuggestAllocationsDialog
+            opportunityId={opportunityId}
+            currency={currency}
+            rollouts={rollouts}
+            roles={roles}
+            onApply={applySuggestion}
+          />
+          <RevisionMenu opportunityId={opportunityId} currency={currency} />
+        </div>
         <Button
           variant="outline"
           render={<a href={`/api/opportunities/${opportunityId}/export/xlsx`} />}

@@ -3,6 +3,7 @@ import type {
   GovernanceContent,
   MethodologyPhase,
   ProposalStructuredContent,
+  TeamStructureContent,
   TitledItem,
 } from '@/types'
 import { DEFAULT_RACI } from '@/lib/raci'
@@ -45,9 +46,105 @@ export const DEFAULT_CRIMS: CrimItem[] = [
 ]
 
 export const GOVERNANCE: GovernanceContent = {
-  steering: 'Steering Committee — executive sponsors from both organisations; meets monthly; owns scope, budget and go-live decisions.',
-  pmo: 'Joint PMO — Arcwide PM + customer PM; weekly status, risk/issue and decision logs; controls change.',
-  workstreams: ['Finance & Procurement', 'Supply Chain & Manufacturing', 'Data & Integration', 'Change & Adoption'],
+  bodies: [
+    {
+      name: 'Steering Committee',
+      cadence: 'Monthly',
+      icon: 'clipboard',
+      customerParticipants: ['Project Sponsor', '{customer} Executive Committee', '{customer} Project Manager'],
+      partnerParticipants: ['{partner} Executive Sponsor', '{partner} Project Manager', 'IFS Representatives'],
+      responsibilities: [
+        'Arbitrate and decide on structural issues',
+        'Ensure program objectives are being met and monitor program progress against key milestones and budget',
+        'Validate main deliverables & project steps',
+      ],
+    },
+    {
+      name: 'Project Committee',
+      cadence: 'Weekly',
+      icon: 'gauge',
+      customerParticipants: ['{customer} Project Manager', 'Business Process Owners'],
+      partnerParticipants: ['{partner} Project Manager', '{partner} PMO', '{partner} Consultants'],
+      responsibilities: [
+        'Arbitrate business rules, processes and configurations to be implemented',
+        'Monitor the project on a weekly basis (coordination, planning)',
+        'Define operational actions',
+      ],
+    },
+    {
+      name: 'Project Team Meeting',
+      cadence: 'Weekly',
+      icon: 'pin',
+      customerParticipants: ['Business Process Owners'],
+      partnerParticipants: ['{partner} Project Manager', '{partner} PMO', '{partner} Consultants'],
+      responsibilities: [
+        'Discuss to do/in progress/done tasks daily',
+        'Follow advancements towards milestones and identify delays',
+        'Identify issues and risk',
+      ],
+    },
+  ],
+}
+
+// The functional team's scope areas are mirrored on both the partner and customer
+// sides in the default org chart (see the reference image).
+const FUNCTIONAL_AREAS = [
+  {
+    label: 'Manufacturing',
+    children: ['Shop Order', 'Part Costing', 'Shop floor workbench', 'PLM / Engineering', 'Quality'],
+  },
+  { label: 'Finance', children: ['AP, AR, GL'] },
+  { label: 'Supply Chain', children: ['Inventory / Warehouse', 'Multisite / Inter Company', 'Rental Management'] },
+  { label: 'Sales and Procurement', children: [] },
+  { label: 'EAM and Document Management', children: [] },
+  { label: 'HR', children: [] },
+]
+
+export const TEAM_STRUCTURE: TeamStructureContent = {
+  steeringLabel: 'Steering Group',
+  designAuthorityLabel: 'Design Authority',
+  changeManagementLabel: 'Change Management',
+  partner: {
+    projectManager: '{partner} Project Manager',
+    teams: [
+      {
+        title: 'Technical Team',
+        enabled: true,
+        areas: [
+          { label: 'Technical Consultancy', children: ['Integration', 'Migration'] },
+          { label: 'Developers', children: ['Integration'] },
+        ],
+      },
+      {
+        title: 'Functional Team',
+        lead: 'Solution Architect',
+        enabled: true,
+        areas: FUNCTIONAL_AREAS,
+      },
+    ],
+  },
+  customer: {
+    projectManager: '{customer} Project Manager',
+    teams: [
+      {
+        title: '{customer} Functional Team',
+        lead: 'Solution Architect',
+        enabled: true,
+        areas: FUNCTIONAL_AREAS,
+      },
+      {
+        title: '{customer} Technical Team',
+        lead: 'Technical Lead',
+        enabled: true,
+        areas: [
+          { label: 'Configuration', children: [] },
+          { label: 'Reporting', children: [] },
+          { label: 'Integration', children: [] },
+          { label: 'Migration', children: [] },
+        ],
+      },
+    ],
+  },
 }
 
 export const CUSTOMER_COMMITMENTS: TitledItem[] = [
@@ -107,6 +204,7 @@ export const BUILTIN_STRUCTURED_CONTENT: ProposalStructuredContent = {
   methodologyPhases: METHODOLOGY_PHASES,
   waysOfWorking: WAYS_OF_WORKING,
   governance: GOVERNANCE,
+  teamStructure: TEAM_STRUCTURE,
   customerCommitments: CUSTOMER_COMMITMENTS,
   dataMigrationSteps: DATA_MIGRATION_STEPS,
   integrationSteps: INTEGRATION_STEPS,

@@ -14,6 +14,8 @@ import type { ProposalContentInput } from '@/lib/schemas/proposal'
 import type { EditorKey } from '@/lib/documents/proposal-sections'
 import { BUILTIN_STRUCTURED_CONTENT } from '@/lib/documents/slides/static-content'
 import { normalizeRaci, raciColumnId } from '@/lib/raci'
+import { normalizeGovernance } from '@/lib/governance'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 import type {
   ProposalStructuredContent,
   RaciMatrix,
@@ -24,6 +26,11 @@ import type {
   MethodologyPhase,
   TitledItem,
   GovernanceContent,
+  GovernanceBody,
+  OrgArea,
+  OrgSide,
+  OrgTeam,
+  TeamStructureContent,
   ValueDriver,
   TeamProfile,
   ProposalReference,
@@ -48,6 +55,7 @@ const STRUCTURED_KEYS: Partial<Record<EditorKey, keyof ProposalStructuredContent
   methodologyPhases: 'methodologyPhases',
   waysOfWorking: 'waysOfWorking',
   governance: 'governance',
+  teamStructure: 'teamStructure',
   customerCommitments: 'customerCommitments',
   dataMigrationSteps: 'dataMigrationSteps',
   integrationSteps: 'integrationSteps',
@@ -434,17 +442,159 @@ export function StringListEditor({ value, onChange, max }: { value: string[]; on
   )
 }
 
+const GOV_ICON_OPTIONS: Array<{ value: GovernanceBody['icon']; label: string }> = [
+  { value: 'clipboard', label: 'Checklist' },
+  { value: 'gauge', label: 'Dashboard' },
+  { value: 'pin', label: 'Location' },
+]
+
+const emptyGovernanceBody = (): GovernanceBody => ({
+  name: '',
+  cadence: '',
+  icon: 'clipboard',
+  customerParticipants: [],
+  partnerParticipants: [],
+  responsibilities: [],
+})
+
 export function GovernanceEditor({ value, onChange }: { value: GovernanceContent; onChange: (v: GovernanceContent) => void }) {
+  const bodies = value.bodies ?? []
+  const setBody = (i: number, patch: Partial<GovernanceBody>) =>
+    onChange({ bodies: bodies.map((b, j) => (j === i ? { ...b, ...patch } : b)) })
+  const removeBody = (i: number) => onChange({ bodies: bodies.filter((_, j) => j !== i) })
+
   return (
     <div className="space-y-3">
-      <div><Label className="text-xs">Steering Committee</Label><Textarea className="mt-1" rows={2} value={value.steering} onChange={(e) => onChange({ ...value, steering: e.target.value })} /></div>
-      <div><Label className="text-xs">Joint PMO</Label><Textarea className="mt-1" rows={2} value={value.pmo} onChange={(e) => onChange({ ...value, pmo: e.target.value })} /></div>
-      <div>
-        <Label className="text-xs">Workstreams</Label>
-        <div className="mt-1">
-          <StringListEditor value={value.workstreams} onChange={(ws) => onChange({ ...value, workstreams: ws })} max={12} />
+      <p className="text-xs text-muted-foreground">
+        <code>{'{customer}'}</code> and <code>{'{partner}'}</code> are replaced with the customer and Arcwide names when the slide renders.
+      </p>
+      {bodies.map((b, i) => (
+        <RowShell key={i} onRemove={() => removeBody(i)}>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <Label className="text-xs">Name</Label>
+              <Input className="mt-1" value={b.name} onChange={(e) => setBody(i, { name: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">Cadence</Label>
+              <Input className="mt-1" value={b.cadence} onChange={(e) => setBody(i, { cadence: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Icon</Label>
+            <select className={`${selectClass} mt-1 w-full`} value={b.icon} onChange={(e) => setBody(i, { icon: e.target.value as GovernanceBody['icon'] })}>
+              {GOV_ICON_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Participants — customer</Label>
+            <div className="mt-1"><StringListEditor value={b.customerParticipants} onChange={(v) => setBody(i, { customerParticipants: v })} max={8} /></div>
+          </div>
+          <div>
+            <Label className="text-xs">Participants — Arcwide</Label>
+            <div className="mt-1"><StringListEditor value={b.partnerParticipants} onChange={(v) => setBody(i, { partnerParticipants: v })} max={8} /></div>
+          </div>
+          <div>
+            <Label className="text-xs">Responsibilities</Label>
+            <div className="mt-1"><StringListEditor value={b.responsibilities} onChange={(v) => setBody(i, { responsibilities: v })} max={8} /></div>
+          </div>
+        </RowShell>
+      ))}
+      {bodies.length < 6 && <AddButton label="Add body" onClick={() => onChange({ bodies: [...bodies, emptyGovernanceBody()] })} />}
+    </div>
+  )
+}
+
+const emptyOrgArea = (): OrgArea => ({ label: '', children: [] })
+const emptyOrgTeam = (): OrgTeam => ({ title: '', lead: '', areas: [], enabled: true })
+
+function OrgTeamEditor({ value, onChange, onRemove }: { value: OrgTeam; onChange: (v: OrgTeam) => void; onRemove: () => void }) {
+  const areas = value.areas ?? []
+  const setArea = (i: number, patch: Partial<OrgArea>) => onChange({ ...value, areas: areas.map((a, j) => (j === i ? { ...a, ...patch } : a)) })
+  return (
+    <RowShell onRemove={onRemove}>
+      <label className="flex items-center gap-2 text-xs">
+        <input type="checkbox" checked={value.enabled} onChange={(e) => onChange({ ...value, enabled: e.target.checked })} />
+        Show this team
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">Team title</Label>
+          <Input className="mt-1" value={value.title} onChange={(e) => onChange({ ...value, title: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">Lead role</Label>
+          <Input className="mt-1" value={value.lead ?? ''} onChange={(e) => onChange({ ...value, lead: e.target.value })} />
         </div>
       </div>
+      <div className="space-y-2">
+        <Label className="text-xs">Areas</Label>
+        {areas.map((a, i) => (
+          <div key={i} className="rounded-md border border-border p-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <Input value={a.label} placeholder="Area (e.g. Manufacturing)" onChange={(e) => setArea(i, { label: e.target.value })} />
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onChange({ ...value, areas: areas.filter((_, j) => j !== i) })} aria-label="Remove area">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="pl-3">
+              <Label className="text-[11px] text-muted-foreground">Sub-items</Label>
+              <div className="mt-1"><StringListEditor value={a.children} onChange={(v) => setArea(i, { children: v })} max={12} /></div>
+            </div>
+          </div>
+        ))}
+        {areas.length < 12 && <AddButton label="Add area" onClick={() => onChange({ ...value, areas: [...areas, emptyOrgArea()] })} />}
+      </div>
+    </RowShell>
+  )
+}
+
+function OrgSideEditor({ title, value, onChange }: { title: string; value: OrgSide; onChange: (v: OrgSide) => void }) {
+  const teams = value.teams ?? []
+  return (
+    <div className="space-y-2 rounded-md border border-border p-2">
+      <p className="text-xs font-semibold">{title}</p>
+      <div>
+        <Label className="text-xs">Project manager</Label>
+        <Input className="mt-1" value={value.projectManager} onChange={(e) => onChange({ ...value, projectManager: e.target.value })} />
+      </div>
+      {teams.map((t, i) => (
+        <OrgTeamEditor
+          key={i}
+          value={t}
+          onChange={(v) => onChange({ ...value, teams: teams.map((x, j) => (j === i ? v : x)) })}
+          onRemove={() => onChange({ ...value, teams: teams.filter((_, j) => j !== i) })}
+        />
+      ))}
+      {teams.length < 4 && <AddButton label="Add team" onClick={() => onChange({ ...value, teams: [...teams, emptyOrgTeam()] })} />}
+    </div>
+  )
+}
+
+export function TeamStructureEditor({ value, onChange }: { value: TeamStructureContent; onChange: (v: TeamStructureContent) => void }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        <code>{'{customer}'}</code> and <code>{'{partner}'}</code> are replaced with the customer and Arcwide names when the slide renders. Untick a team to hide it.
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <Label className="text-xs">Steering box</Label>
+          <Input className="mt-1" value={value.steeringLabel} onChange={(e) => onChange({ ...value, steeringLabel: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">Design authority</Label>
+          <Input className="mt-1" value={value.designAuthorityLabel} onChange={(e) => onChange({ ...value, designAuthorityLabel: e.target.value })} />
+        </div>
+        <div>
+          <Label className="text-xs">Change management</Label>
+          <Input className="mt-1" value={value.changeManagementLabel} onChange={(e) => onChange({ ...value, changeManagementLabel: e.target.value })} />
+        </div>
+      </div>
+      <OrgSideEditor title="Arcwide (partner) — magenta" value={value.partner} onChange={(v) => onChange({ ...value, partner: v })} />
+      <OrgSideEditor title="Customer — purple" value={value.customer} onChange={(v) => onChange({ ...value, customer: v })} />
     </div>
   )
 }
@@ -515,7 +665,9 @@ export function SectionEditor({ editorKey, content, update, defaults, isAdmin, o
     case 'whyArcwide':
       return wrap(<TitledItemsEditor value={effective} onChange={setOverride} max={6} />)
     case 'governance':
-      return wrap(<GovernanceEditor value={effective} onChange={setOverride} />)
+      return wrap(<GovernanceEditor value={normalizeGovernance(effective)} onChange={setOverride} />)
+    case 'teamStructure':
+      return wrap(<TeamStructureEditor value={normalizeTeamStructure(effective)} onChange={setOverride} />)
     case 'dataMigrationSteps':
     case 'integrationSteps':
     case 'testingSteps':

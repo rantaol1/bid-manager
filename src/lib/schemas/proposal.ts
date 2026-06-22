@@ -38,10 +38,42 @@ const titledItem = z.object({
   description: z.string().max(600),
 })
 
+const governanceBody = z.object({
+  name: z.string().max(120).trim(),
+  cadence: z.string().max(60).trim(),
+  icon: z.enum(['clipboard', 'gauge', 'pin']),
+  customerParticipants: z.array(z.string().max(160)).max(8),
+  partnerParticipants: z.array(z.string().max(160)).max(8),
+  responsibilities: z.array(z.string().max(300)).max(8),
+})
+
 const governance = z.object({
-  steering: z.string().max(800),
-  pmo: z.string().max(800),
-  workstreams: z.array(z.string().max(120)).max(12),
+  bodies: z.array(governanceBody).max(6),
+})
+
+const orgArea = z.object({
+  label: z.string().max(120).trim(),
+  children: z.array(z.string().max(120)).max(12),
+})
+
+const orgTeam = z.object({
+  title: z.string().max(120).trim(),
+  lead: z.string().max(160).trim().optional(),
+  areas: z.array(orgArea).max(12),
+  enabled: z.boolean(),
+})
+
+const orgSide = z.object({
+  projectManager: z.string().max(160).trim(),
+  teams: z.array(orgTeam).max(4),
+})
+
+const teamStructure = z.object({
+  steeringLabel: z.string().max(120).trim(),
+  designAuthorityLabel: z.string().max(120).trim(),
+  changeManagementLabel: z.string().max(120).trim(),
+  partner: orgSide,
+  customer: orgSide,
 })
 
 const stepList = z.array(z.string().max(300)).max(12)
@@ -53,6 +85,7 @@ const structuredBlocks = {
   methodologyPhases: z.array(methodologyPhase).max(12),
   waysOfWorking: z.array(titledItem).max(12),
   governance,
+  teamStructure,
   customerCommitments: z.array(titledItem).max(12),
   dataMigrationSteps: stepList,
   integrationSteps: stepList,
@@ -113,6 +146,7 @@ export const proposalContentSchema = z.object({
   methodologyPhases: structuredBlocks.methodologyPhases.nullable().optional(),
   waysOfWorking: structuredBlocks.waysOfWorking.nullable().optional(),
   governance: structuredBlocks.governance.nullable().optional(),
+  teamStructure: structuredBlocks.teamStructure.nullable().optional(),
   customerCommitments: structuredBlocks.customerCommitments.nullable().optional(),
   dataMigrationSteps: structuredBlocks.dataMigrationSteps.nullable().optional(),
   integrationSteps: structuredBlocks.integrationSteps.nullable().optional(),
@@ -125,8 +159,13 @@ export const proposalContentSchema = z.object({
   boardDeckVersionId: z.string().min(1).nullable().optional(),
 })
 
-/** Global defaults — all structured blocks required (defaults are always complete). */
-export const proposalDefaultsSchema = z.object(structuredBlocks)
+/** Global defaults — structured blocks are complete, except `teamStructure` which is
+ *  nullable/optional so the column can be added to pre-existing rows without a
+ *  destructive migration (the resolve cascade falls back to the built-in default). */
+export const proposalDefaultsSchema = z.object({
+  ...structuredBlocks,
+  teamStructure: structuredBlocks.teamStructure.nullable().optional(),
+})
 
 /** Generation request. When `selectedSections` is omitted, the chosen deck
  *  version's section selection is used. `pptxTemplateId`: a string selects that

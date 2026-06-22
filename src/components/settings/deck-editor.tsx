@@ -25,6 +25,7 @@ import {
 import { getSections } from '@/lib/documents/proposal-sections'
 import { buildTemplatePreviewData } from '@/lib/documents/blank-proposal-data'
 import { normalizeRaci } from '@/lib/raci'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 import type { DeckVersionContentInput } from '@/lib/schemas/deck-template'
 import type { ProposalNarrative, ProposalStructuredContent } from '@/types'
 
@@ -38,6 +39,7 @@ function deckContent(d: DeckVersionContentInput): ProposalStructuredContent {
     methodologyPhases: d.methodologyPhases,
     waysOfWorking: d.waysOfWorking,
     governance: d.governance,
+    teamStructure: normalizeTeamStructure(d.teamStructure),
     customerCommitments: d.customerCommitments,
     dataMigrationSteps: d.dataMigrationSteps,
     integrationSteps: d.integrationSteps,

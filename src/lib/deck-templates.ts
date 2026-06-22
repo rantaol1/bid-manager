@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { getProposalDefaults } from '@/app/api/proposal-defaults/route'
 import { defaultSectionSelection, type DeliverableType } from '@/lib/documents/proposal-sections'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 import type { DeckVersionContentInput } from '@/lib/schemas/deck-template'
 
 /** Version columns stored as Json (null must be written as Prisma.DbNull). */
@@ -14,6 +15,7 @@ const VERSION_JSON_FIELDS = new Set([
   'methodologyPhases',
   'waysOfWorking',
   'governance',
+  'teamStructure',
   'customerCommitments',
   'dataMigrationSteps',
   'integrationSteps',
@@ -49,6 +51,7 @@ export async function buildDefaultVersionContent(kind: DeliverableType): Promise
     methodologyPhases: d.methodologyPhases as DeckVersionContentInput['methodologyPhases'],
     waysOfWorking: d.waysOfWorking as DeckVersionContentInput['waysOfWorking'],
     governance: d.governance as DeckVersionContentInput['governance'],
+    teamStructure: normalizeTeamStructure(d.teamStructure),
     customerCommitments: d.customerCommitments as DeckVersionContentInput['customerCommitments'],
     dataMigrationSteps: d.dataMigrationSteps as DeckVersionContentInput['dataMigrationSteps'],
     integrationSteps: d.integrationSteps as DeckVersionContentInput['integrationSteps'],

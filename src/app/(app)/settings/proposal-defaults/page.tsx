@@ -18,6 +18,7 @@ import {
   GovernanceEditor,
 } from '@/components/deliverables/proposal-editors'
 import { normalizeRaci } from '@/lib/raci'
+import { normalizeGovernance } from '@/lib/governance'
 import type { ProposalStructuredContent } from '@/types'
 
 export default function ProposalDefaultsPage() {
@@ -30,7 +31,7 @@ export default function ProposalDefaultsPage() {
   useEffect(() => {
     if (!seededRef.current && data) {
       seededRef.current = true
-      setDraft({ ...data, raci: normalizeRaci(data.raci) })
+      setDraft({ ...data, raci: normalizeRaci(data.raci), governance: normalizeGovernance(data.governance) })
     }
   }, [data])
 

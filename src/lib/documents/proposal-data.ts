@@ -3,6 +3,8 @@ import { loadDocData, type DocData } from '@/lib/documents/doc-data'
 import { BUILTIN_STRUCTURED_CONTENT } from '@/lib/documents/slides/static-content'
 import { defaultSectionSelection, type DeliverableType } from '@/lib/documents/proposal-sections'
 import { normalizeRaci } from '@/lib/raci'
+import { normalizeGovernance } from '@/lib/governance'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 import type {
   ProposalStructuredContent,
   ProposalNarrative,
@@ -69,7 +71,8 @@ export async function resolveStructuredContent(
     crims: resolve('crims', o.crims, v, d),
     methodologyPhases: resolve('methodologyPhases', o.methodologyPhases, v, d),
     waysOfWorking: resolve('waysOfWorking', o.waysOfWorking, v, d),
-    governance: resolve('governance', o.governance, v, d),
+    governance: normalizeGovernance(resolve('governance', o.governance, v, d)),
+    teamStructure: normalizeTeamStructure(resolve('teamStructure', o.teamStructure, v, d)),
     customerCommitments: resolve('customerCommitments', o.customerCommitments, v, d),
     dataMigrationSteps: resolve('dataMigrationSteps', o.dataMigrationSteps, v, d),
     integrationSteps: resolve('integrationSteps', o.integrationSteps, v, d),

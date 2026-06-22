@@ -2,6 +2,7 @@ import type { ProposalData } from '@/lib/documents/proposal-data'
 import type { ProposalContentInput } from '@/lib/schemas/proposal'
 import type { ProposalStructuredContent } from '@/types'
 import { normalizeRaci } from '@/lib/raci'
+import { normalizeTeamStructure } from '@/lib/team-structure'
 
 type Draft = Partial<ProposalContentInput>
 
@@ -11,6 +12,7 @@ const STRUCTURED_KEYS: Array<keyof ProposalStructuredContent> = [
   'methodologyPhases',
   'waysOfWorking',
   'governance',
+  'teamStructure',
   'customerCommitments',
   'dataMigrationSteps',
   'integrationSteps',
@@ -37,6 +39,7 @@ export function mergeDraftIntoData(data: ProposalData, draft: Draft | undefined)
     }
   }
   content.raci = normalizeRaci(content.raci)
+  content.teamStructure = normalizeTeamStructure(content.teamStructure)
 
   const n = data.narrative
   const pick = <T>(v: T | null | undefined, fallback: T): T => (v !== undefined ? (v as T) : fallback)
